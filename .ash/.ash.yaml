@@ -427,6 +427,9 @@ global_settings:
     - rule_id: 'GHSA-7wx4-6vff-v64p-diffusers'
       path: 'vton-neuron/requirements.txt'
       reason: 'Same diffusers advisory class (code injection via untrusted pipeline/components). Not exploitable — only trusted, locally-compiled/baked models are loaded. Pinned to 0.36.0 for QwenImageEditPlusPipeline; fixed in 0.38 (bump needs a Trn2 recompile — recommended for production).'
+    - rule_id: 'GHSA-j7w6-vpvq-j3gm-diffusers'
+      path: 'vton-neuron/requirements.txt'
+      reason: 'CVE-2026-44827: same diffusers untrusted-pipeline / custom-component code-execution class. Not exploitable — vton-neuron loads only the fixed, trusted QwenImageEditPlusPipeline with locally-compiled/baked models (D-038), never untrusted custom pipelines or user-provided model sources. Fixed in 0.38 (installable alongside the required transformers<5, but the Neuron code subclasses deep diffusers internals — attention/autoencoder/modeling_outputs — so the bump needs a Trn2 recompile + Qwen pipeline revalidation; deferred pending a Capacity Block).'
 
     # ==== Dependency CVEs (transformers) — not exploitable + cannot upgrade (Neuron pin <5) ====
     # transformers is pinned >=4.45,<5: neuronx_distributed.pipeline.trace needs
