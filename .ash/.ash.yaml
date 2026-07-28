@@ -428,6 +428,25 @@ global_settings:
       path: 'vton-neuron/requirements.txt'
       reason: 'Same diffusers advisory class (code injection via untrusted pipeline/components). Not exploitable — only trusted, locally-compiled/baked models are loaded. Pinned to 0.36.0 for QwenImageEditPlusPipeline; fixed in 0.38 (bump needs a Trn2 recompile — recommended for production).'
 
+    # ==== Dependency CVEs (transformers) — not exploitable + cannot upgrade (Neuron pin <5) ====
+    # transformers is pinned >=4.45,<5: neuronx_distributed.pipeline.trace needs
+    # transformers.utils.fx.HFTracer, removed in 5.x (and vllm needs transformers<5). All fixes below
+    # are in transformers 5.x; CVE-2025-14929 has no fix. None are exploitable — vton-neuron loads only
+    # the fixed, locally-compiled/baked Qwen Image-Edit model (D-038), never attacker-controlled
+    # models, configs, checkpoints, or the HuggingFace Trainer.
+    - rule_id: 'GHSA-29pf-2h5f-8g72-transformers'
+      path: 'vton-neuron/requirements.txt'
+      reason: 'CVE-2026-4372: RCE via a malicious config.json _attn_implementation_internal injection. Not exploitable — only the trusted, baked Qwen config is loaded, never an attacker-supplied one. Fixed in 5.3.0, but transformers is pinned <5 for Neuron HFTracer + vllm compatibility (bump needs a Trn2 recompile + revalidation — recommended for production).'
+    - rule_id: 'GHSA-fgcw-684q-jj6r-transformers'
+      path: 'vton-neuron/requirements.txt'
+      reason: 'CVE-2026-5241: RCE in the LightGlue model-loading path (introduced in transformers 5.2.0). Not applicable — LightGlue is not used and the pinned 4.x line predates the affected code; only the trusted Qwen model is loaded. Pinned <5 for Neuron/vllm.'
+    - rule_id: 'CVE-2025-14929-transformers'
+      path: 'vton-neuron/requirements.txt'
+      reason: 'CVE-2025-14929: RCE via X-CLIP checkpoint-conversion deserialization of untrusted data. Not exploitable — X-CLIP is not used and no untrusted checkpoints are converted (inference/compile only). No upstream fix exists; transformers is pinned <5 for Neuron HFTracer + vllm.'
+    - rule_id: 'GHSA-69w3-r845-3855-transformers'
+      path: 'vton-neuron/requirements.txt'
+      reason: 'CVE-2026-1839: RCE via unsafe torch.load in Trainer._load_rng_state checkpoint loading. Not exploitable — vton-neuron does inference/compilation and never uses the HuggingFace Trainer to load untrusted checkpoints. Fixed in 5.0.0 but pinned <5 for Neuron HFTracer + vllm.'
+
     # ==== Secret detector: false-positive keyword match (not a real secret) ====
     - rule_id: 'SECRET-SECRET-KEYWORD'
       path: 'components/frontend/src/context/CognitoAuthContext.tsx'
