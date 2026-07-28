@@ -1,8 +1,9 @@
 """
 Typed state for the StoreAI orchestrator.
 
-Implements the directed conversation funnel from
-AGENTCORE_MIGRATION_DESIGN.md §4.
+Implements the directed conversation funnel — the monotonic stage FSM
+(GREET -> DISCOVER -> BROWSE -> SHORTLIST -> COMMIT -> HANDOFF -> CLOSED)
+defined by the Stage enum below and advanced in app/stage_fsm.py.
 """
 from __future__ import annotations
 
