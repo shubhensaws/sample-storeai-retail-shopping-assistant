@@ -840,7 +840,7 @@ def _run_vton(engine, cid, pid, steps=50, cfg_scale=None, seed=42):
 
     Handles FASHN (GPU) and Qwen Image-Edit (Neuron). Returns a dict with
     {result_url, customer_id, product_id, engine, inference_sec, cost} on success, or
-    {error, message?} (including the content-review outcome). Nova Canvas removed (D-009).
+    {error, message?} (including the content-review outcome).
     """
     import boto3 as _boto3
     import urllib.request as _ur

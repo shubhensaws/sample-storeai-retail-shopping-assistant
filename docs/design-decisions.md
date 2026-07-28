@@ -4,8 +4,8 @@ This document records the significant architectural decisions behind StoreAI, an
 design depends on. It is a curated, external-facing version of the project's internal decision log.
 Each entry states the decision, why it was made, and what it implies.
 
-> **Note:** D-numbers are non-sequential. Only externally relevant decisions are published here, and
-> the numbering matches the internal decision tracker.
+> **Note:** This is a curated set — only the externally relevant decisions are published, so the
+> D-numbers are stable identifiers rather than a continuous sequence.
 
 ## Assumptions
 
@@ -67,9 +67,10 @@ Separate generic model servers (L1) from application/domain logic that owns prom
 gateway (L3). **Why:** A model must be deployable and queryable on its own, and prompts belong to the
 product, not the model.
 
-### D-009 — Nova Canvas try-on removed
-The Bedrock Nova Canvas try-on engine was removed (deprecated). **Implication:** Try-on requires a
-self-hosted engine — Qwen Image-Edit (default when available) or FASHN. There is no zero-infrastructure
+### D-009 — Try-on requires a self-hosted engine (no managed fallback)
+Virtual try-on runs only on a self-hosted engine — Qwen Image-Edit (default when available) or
+FASHN. **Why:** no managed/zero-infrastructure Bedrock try-on engine is available. **Implication:**
+try-on needs a GPU (FASHN) or Trainium (Qwen) engine deployed; there is no zero-infrastructure
 try-on fallback.
 
 ### D-021 — Nova Sonic is the one gateway exception

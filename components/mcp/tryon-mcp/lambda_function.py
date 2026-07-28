@@ -350,8 +350,8 @@ def virtual_tryon(p):
         )
         return {"deferred": True, "job_id": job_id, "customer_id": cid, "product_id": pid, "message": "Virtual try-on is being generated."}
 
-    # No self-hosted VTON engine matched. Nova Canvas was removed (D-009); try-on
-    # requires a self-hosted engine — FASHN or Qwen Image-Edit.
+    # No self-hosted VTON engine matched. Try-on requires a self-hosted engine
+    # — FASHN or Qwen Image-Edit — to be deployed and selected.
     return {"error": "no_engine", "message": f"No virtual try-on engine available for '{engine}'. Deploy FASHN or Qwen Image-Edit."}
 
 
