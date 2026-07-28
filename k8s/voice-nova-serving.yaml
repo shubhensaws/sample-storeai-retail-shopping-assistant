@@ -1,0 +1,97 @@
+# voice-nova (L2) — Nova Sonic bidirectional STT/TTS WebSocket server.
+# Bedrock DIRECT (documented LiteLLM exception, D-021). Nova Sonic is only in
+# us-east-1, so it calls cross-region via NAT (D-037). Rendered by deploy/modules/voice-nova.sh.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-voice-nova
+  labels:
+    app: storeai-voice-nova
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storeai-voice-nova
+  template:
+    metadata:
+      labels:
+        app: storeai-voice-nova
+    spec:
+      serviceAccountName: storeai-services
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: voice-nova
+          image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/storeai-${ENV}-nova-sonic:${IMAGE_TAG}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8505
+          env:
+            - name: NOVA_SONIC_REGION
+              value: "us-east-1"
+            - name: NOVA_SONIC_MODEL_ID
+              value: "amazon.nova-sonic-v1:0"
+            - name: AWS_REGION
+              value: "${REGION}"
+            - name: COGNITO_USER_POOL_ID
+              value: "${COGNITO_USER_POOL_ID}"
+            - name: COGNITO_APP_CLIENT_ID
+              value: "${COGNITO_APP_CLIENT_ID}"
+            - name: COGNITO_REGION
+              value: "${REGION}"
+            - name: HOME
+              value: /tmp
+            - name: TMPDIR
+              value: /tmp
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            tcpSocket:
+              port: 8505
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8505
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-voice-nova
+  labels:
+    app: storeai-voice-nova
+spec:
+  type: ClusterIP
+  selector:
+    app: storeai-voice-nova
+  ports:
+    - port: 8505
+      targetPort: 8505
+      protocol: TCP

@@ -1,0 +1,95 @@
+# whisper (L1) — faster-whisper large-v3 STT on GPU. WS at /whisper on :8765.
+# Model baked into the image. Scheduled on the GPU NodePool. Rendered by deploy/modules/whisper.sh.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-whisper
+  labels:
+    app: storeai-whisper
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: storeai-whisper
+  template:
+    metadata:
+      labels:
+        app: storeai-whisper
+    spec:
+      nodeSelector:
+        storeai/accelerator: nvidia
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: whisper
+          image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/storeai-${ENV}-whisper:${IMAGE_TAG}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8765
+          env:
+            - name: WHISPER_MODEL
+              value: "large-v3"
+            - name: PATH_PREFIX
+              value: "/whisper"
+            - name: PORT
+              value: "8765"
+            - name: HF_HOME
+              value: "/models/hf"
+            - name: COGNITO_USER_POOL_ID
+              value: "${COGNITO_USER_POOL_ID}"
+            - name: COGNITO_APP_CLIENT_ID
+              value: "${COGNITO_APP_CLIENT_ID}"
+            - name: COGNITO_REGION
+              value: "${REGION}"
+          resources:
+            requests:
+              cpu: "1"
+              memory: 5Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: 12Gi
+              nvidia.com/gpu: "1"
+          # Model loads at import (before the port binds), so a TCP probe on 8765
+          # only succeeds once the model is ready.
+          startupProbe:
+            tcpSocket:
+              port: 8765
+            failureThreshold: 60
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8765
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: 8765
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-whisper
+  labels:
+    app: storeai-whisper
+spec:
+  type: ClusterIP
+  selector:
+    app: storeai-whisper
+  ports:
+    - port: 8765
+      targetPort: 8765
+      protocol: TCP

@@ -1,0 +1,98 @@
+# One-shot Job: compile Qwen-Image-Edit (v3_cfg) for Trn2 on the CB MNG node (Phase 4 / D-040).
+# Pulls the VTON code from S3, installs deps, runs v1's compile.sh (adapted paths), and uploads
+# the compiled artifacts to the TF-managed cache bucket so the serving pod can load them directly.
+# v3_cfg => tp=4, world_size=8 => requests 8 NeuronCores (co-exists with the LLM's 16 on the node).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vton-compile-trn2
+  namespace: default
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600  # auto-GC the completed compile Job after 1h
+  template:
+    metadata:
+      labels:
+        app: vton-compile
+    spec:
+      restartPolicy: Never
+      schedulerName: my-scheduler
+      nodeSelector:
+        storeai/accelerator: neuron
+      tolerations:
+        - key: aws.amazon.com/neuron
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: compile
+          image: public.ecr.aws/neuron/pytorch-inference-vllm-neuronx:0.16.0-neuronx-py312-sdk2.29.0-ubuntu24.04
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          command: ["bash", "-c"]
+          args:
+            - |
+              set -ex
+              export CODE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/vton-code
+              export CACHE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/vton-qwen/trn2
+              export BASE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/qwen-image-edit-base
+              export HF_HOME=/mnt/nvme/hf_cache
+              export HF_HUB_DISABLE_XET=1
+              export HF_HUB_ENABLE_HF_TRANSFER=0
+              HF_CACHE=/mnt/nvme/qwen_image_edit_hf_cache_dir
+              mkdir -p /work /mnt/nvme/hf_cache "$HF_CACHE"
+              cd /work
+              echo "== fetch code =="
+              aws s3 sync "$CODE_S3/" /work/ --region ${REGION} --only-show-errors
+              echo "== install deps (keep image transformers 4.x for neuronx_distributed; --no-deps avoids transformers 5) =="
+              pip install -q --no-deps "diffusers==0.36.0" qwen-vl-utils 2>&1 | tail -4 || true
+              pip install -q accelerate torchvision pillow hf_transfer 2>&1 | tail -4 || true
+              python -c "import diffusers,transformers;print('diffusers',diffusers.__version__,'transformers',transformers.__version__)"
+              python -c "from diffusers import QwenImageEditPlusPipeline; print('QwenImageEditPlusPipeline imported OK')"
+              # Base model: reuse from S3 if cached (skip HF download); else cache_hf_model.py pulls from HF (parallel w/ HF_TOKEN)
+              if [ "$(aws s3 ls $BASE_S3/ --recursive --region ${REGION} 2>/dev/null | wc -l)" -gt 0 ]; then
+                echo "== base model from S3 cache =="; aws s3 sync "$BASE_S3/" "$HF_CACHE/" --region ${REGION} --only-show-errors
+              else
+                echo "== base model will be downloaded from HF (token: ${HF_TOKEN:+set}) =="
+              fi
+              echo "== compile v3_cfg (1024x512) =="
+              bash compile.sh v3_cfg 1024 512 448 8 1024 3 1
+              echo "== persist base HF model to S3 for future runs =="
+              aws s3 sync "$HF_CACHE/" "$BASE_S3/" --region ${REGION} --only-show-errors || true
+              echo "== DONE =="
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+                  optional: true
+          resources:
+            requests:
+              cpu: "16"
+              memory: 256Gi
+              aws.amazon.com/neuroncore: "16"
+            limits:
+              cpu: "48"
+              memory: 512Gi
+              aws.amazon.com/neuroncore: "16"
+          volumeMounts:
+            - name: nvme
+              mountPath: /mnt/nvme
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: nvme
+          hostPath:
+            path: /mnt/nvme
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "64Gi"

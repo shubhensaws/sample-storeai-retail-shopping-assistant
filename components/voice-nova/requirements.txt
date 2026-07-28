@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+aws-sdk-bedrock-runtime
+yarl
+aiohttp
+PyJWT[crypto]

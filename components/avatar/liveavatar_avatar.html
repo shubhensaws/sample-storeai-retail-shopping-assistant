@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StoreAI Avatar</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:system-ui;display:flex;flex-direction:column;height:100vh}
+#status{padding:8px 16px;background:#111;font-size:13px;color:#aaa;text-align:center}
+#controls{padding:8px 16px;background:#1a1a1a;display:flex;align-items:center;gap:8px;font-size:13px}
+#controls select,#controls button{background:#333;color:#fff;border:1px solid #555;padding:4px 12px;border-radius:4px;font-size:13px;cursor:pointer}
+#controls button{background:#7c3aed}
+#controls button:hover{background:#6d28d9}
+#video-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+video{max-width:100%;max-height:100%;object-fit:contain}
+</style>
+</head>
+<body>
+<div id="controls">
+  <label>Avatar:</label>
+  <select id="avatarDropdown"></select>
+  <button id="startBtn">&#9654; Start</button>
+  <button id="stopSpeakBtn" style="background:#dc2626;display:none">&#9209; Stop Speaking</button>
+</div>
+<div id="video-wrap">
+  <video id="avatarVideo" autoplay playsinline></video>
+</div>
+<div id="status">Select an avatar and click Start</div>
+
+<script type="module">
+import { LiveAvatarSession, SessionEvent, SessionState, AgentEventsEnum } from 'https://esm.sh/@heygen/liveavatar-web-sdk@0.0.12';
+
+const $status = document.getElementById('status');
+const $dropdown = document.getElementById('avatarDropdown');
+const $video = document.getElementById('avatarVideo');
+const $startBtn = document.getElementById('startBtn');
+const $stopSpeakBtn = document.getElementById('stopSpeakBtn');
+
+let session = null;
+let ws = null;
+let started = false;
+
+async function loadAvatars() {
+  const res = await fetch('/avatars');
+  const avatars = await res.json();
+  $dropdown.innerHTML = '';
+  avatars.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    opt.dataset.voiceId = a.voice_id || '';
+    $dropdown.appendChild(opt);
+  });
+}
+
+async function startAvatar(avatarId, voiceId) {
+  if (session) {
+    $status.textContent = 'Switching avatar...';
+    try { await session.stop(); } catch(e) {}
+    session = null;
+  }
+  $startBtn.disabled = true;
+  $startBtn.textContent = '⏳ Loading...';
+  $status.textContent = 'Starting avatar session...';
+
+  try {
+    const res = await fetch('/token', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ avatar_id: avatarId, voice_id: voiceId })
+    });
+    const data = await res.json();
+    if (data.error) {
+      $status.textContent = 'Error: ' + JSON.stringify(data.detail || data.error);
+      $startBtn.disabled = false;
+      $startBtn.textContent = '▶ Start';
+      return;
+    }
+
+    session = new LiveAvatarSession(data.session_token, { voiceChat: false });
+
+    session.on(SessionEvent.SESSION_STATE_CHANGED, (state) => {
+      if (state === SessionState.DISCONNECTED) {
+        $status.textContent = 'Session ended';
+        $startBtn.textContent = '▶ Start';
+        $startBtn.disabled = false;
+        $stopSpeakBtn.style.display = 'none';
+        started = false;
+      }
+    });
+
+    session.on(SessionEvent.SESSION_STREAM_READY, () => {
+      session.attach($video);
+      $status.textContent = 'Avatar ready';
+      $startBtn.textContent = '⏹ Stop';
+      $startBtn.disabled = false;
+      started = true;
+    });
+
+    session.on(AgentEventsEnum.AVATAR_SPEAK_STARTED, () => { $status.textContent = '🗣️ Speaking...'; $stopSpeakBtn.style.display = 'inline-block'; });
+    session.on(AgentEventsEnum.AVATAR_SPEAK_ENDED, () => { $status.textContent = 'Avatar ready'; $stopSpeakBtn.style.display = 'none'; });
+
+    await session.start();
+    $status.textContent = 'Session started, loading avatar...';
+  } catch (e) {
+    $status.textContent = 'Failed: ' + e.message;
+    $startBtn.textContent = '▶ Start';
+    $startBtn.disabled = false;
+  }
+}
+
+$startBtn.addEventListener('click', () => {
+  if (started && session) {
+    session.stop();
+  } else {
+    const sel = $dropdown.selectedOptions[0];
+    if (sel && sel.value) startAvatar(sel.value, sel.dataset.voiceId || '');
+  }
+});
+
+$dropdown.addEventListener('change', () => {
+  if (started) {
+    const sel = $dropdown.selectedOptions[0];
+    if (sel && sel.value) startAvatar(sel.value, sel.dataset.voiceId || '');
+  }
+});
+
+$stopSpeakBtn.onclick = () => {
+  if (session) {
+    try { session.interrupt(); } catch(e) {}
+    $stopSpeakBtn.style.display = 'none';
+    $status.textContent = 'Avatar ready';
+  }
+};
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws?role=browser`);
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'speak' && session && msg.text) {
+        session.repeat(msg.text);
+        $stopSpeakBtn.style.display = 'inline-block';
+        $status.textContent = '🗣️ Speaking...';
+      }
+      if (msg.type === 'interrupt' && session) {
+        try { session.interrupt(); } catch(e) {}
+        $stopSpeakBtn.style.display = 'none';
+        $status.textContent = 'Avatar ready';
+      }
+    } catch(err) {}
+  };
+  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onerror = () => ws.close();
+}
+
+window.addEventListener('beforeunload', () => {
+  if (session) { try { session.stop(); } catch(e) {} }
+});
+
+loadAvatars();
+connectWS();
+</script>
+</body>
+</html>

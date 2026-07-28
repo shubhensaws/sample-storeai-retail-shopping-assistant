@@ -1,0 +1,199 @@
+# Qwen3-8B vLLM on the Trn2 Capacity-Block MNG (Phase 4 / D-040).
+# Scheduled by my-scheduler onto storeai/accelerator=neuron; requests 16 of 64 logical NeuronCores.
+# Compile cache is stored in the TF-managed S3 bucket (storeai-<env>-neuron-cache-<acct>):
+#   - init downloads the compiled Trn2 cache if present -> vLLM skips the 20-40 min recompile
+#   - a sidecar uploads the cache after a cold compile so future pods/nodes start fast
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-llm
+spec:
+  replicas: 1
+  strategy:
+    # Single replica pinned to one Trn2 node — RollingUpdate can't surge a 2nd pod
+    # (no spare NeuronCores) and would deadlock. Recreate stops the old pod first.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: storeai-llm
+  template:
+    metadata:
+      labels:
+        app: storeai-llm
+    spec:
+      schedulerName: my-scheduler
+      nodeSelector:
+        storeai/accelerator: neuron
+      tolerations:
+        - key: aws.amazon.com/neuron
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: model-download
+          image: public.ecr.aws/docker/library/python:3.12-slim
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 128Mi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              pip install -q --no-cache-dir awscli "huggingface_hub>=0.24" 2>&1 | tail -2
+              export HF_HUB_ENABLE_HF_TRANSFER=0   # robust standard downloader (hf_transfer is flaky)
+              CACHE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/qwen3-8b/trn2
+              BASE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/base-models/Qwen3-8B
+              # Base weights: prefer the S3 cache; then verify completeness and download/resume from
+              # HuggingFace if anything is missing (a partial public download or partial S3 cache must
+              # not be trusted — vLLM fails loading a missing shard). HF_TOKEN (optional secret) gives
+              # faster/reliable authenticated downloads; absent => public. Complete weights persist to S3.
+              if [ ! -f /models/Qwen3-8B/config.json ]; then
+                echo "Trying S3 base-weights cache: $BASE_S3 ..."
+                aws s3 sync "$BASE_S3/" /models/Qwen3-8B/ --exclude "neuron_cache/*" --exclude ".cache/*" --region ${REGION} 2>&1 | tail -3 || true
+              fi
+              python - <<'PYEOF'
+              import json, os
+              from huggingface_hub import snapshot_download
+              d = "/models/Qwen3-8B"
+              idx = os.path.join(d, "model.safetensors.index.json")
+              complete = False
+              if os.path.exists(idx) and os.path.exists(os.path.join(d, "config.json")):
+                  shards = set(json.load(open(idx))["weight_map"].values())
+                  missing = [s for s in shards if not os.path.exists(os.path.join(d, s))]
+                  complete = not missing
+                  if missing:
+                      print("Incomplete model — missing shards:", missing)
+              if complete:
+                  print("Base weights complete (all safetensors shards present).")
+              else:
+                  print("Downloading/completing Qwen3-8B from HuggingFace (verifies + resumes)...")
+                  snapshot_download("Qwen/Qwen3-8B", local_dir=d, ignore_patterns=["original/*", "*.pth"])
+                  print("Download complete.")
+              PYEOF
+              echo "Persisting base weights to $BASE_S3 for future fast starts..."
+              aws s3 sync /models/Qwen3-8B/ "$BASE_S3/" --exclude ".cache/*" --region ${REGION} 2>&1 | tail -3 || true
+              mkdir -p /models/neuron_cache_trn2
+              echo "Checking S3 for a cached Trn2 compile at $CACHE_S3 ..."
+              if [ "$(aws s3 ls $CACHE_S3/ --recursive --region ${REGION} 2>/dev/null | wc -l)" -gt 0 ]; then
+                echo "Found cached compile — downloading (skips recompile)."
+                aws s3 sync "$CACHE_S3/" /models/neuron_cache_trn2/ --region ${REGION} 2>&1 | tail -3
+              else
+                echo "No S3 compile cache yet; vLLM will JIT-compile and the sidecar will upload it."
+              fi
+          env:
+            # Optional: faster authenticated HF downloads. Absent (optional secret) => public download.
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+                  optional: true
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+      containers:
+        - name: vllm
+          image: public.ecr.aws/neuron/pytorch-inference-vllm-neuronx:0.16.0-neuronx-py312-sdk2.29.0-ubuntu24.04
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          command: ["sh", "-c"]
+          args:
+            - |
+              export NEURON_COMPILED_ARTIFACTS=/models/neuron_cache_trn2
+              export VLLM_NEURON_FRAMEWORK=neuronx-distributed-inference
+              export NEURON_RT_DBG_INTRA_RDH_CHANNEL_BUFFER_SIZE=146800640
+              NEURON_CONFIG=$(python3 -c "
+              import json; print(json.dumps({'override_neuron_config':{
+                'text_neuron_config':{'batch_size':1,'ctx_batch_size':1,'tkg_batch_size':1,'seq_len':32768,'max_context_length':32768,'enable_bucketing':True,'context_encoding_buckets':[2048,5120,32768],'token_generation_buckets':[2048,5120,32768],'world_size':16,'tp_degree':16,'torch_dtype':'bfloat16','rpl_reduce_dtype':'bfloat16','attention_dtype':'bfloat16','cast_type':'as-declared','logical_neuron_cores':2,'cc_pipeline_tiling_factor':2,'fused_qkv':True,'qkv_kernel_enabled':True,'mlp_kernel_enabled':True,'attn_kernel_enabled':True}}}))
+              ")
+              echo "Starting vLLM on port 8080..."
+              vllm serve --model=/models/Qwen3-8B --tokenizer=/models/Qwen3-8B \
+                --served-model-name=qwen3-8b \
+                --trust-remote-code --dtype=bfloat16 --tensor-parallel-size=16 \
+                --max-num-seqs=1 --max-model-len=32768 \
+                --enable-auto-tool-choice --tool-call-parser=hermes \
+                --reasoning-parser=qwen3 \
+                --default-chat-template-kwargs '{"enable_thinking": false}' \
+                --additional-config="$NEURON_CONFIG" \
+                --no-enable-chunked-prefill --no-enable-prefix-caching \
+                --host=0.0.0.0 --port=8080
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "16"
+              memory: 128Gi
+              aws.amazon.com/neuroncore: "16"
+            limits:
+              aws.amazon.com/neuroncore: "16"
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 120
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+        # Sidecar: persist the compiled Trn2 cache to S3 so future pods/nodes skip recompile.
+        - name: cache-sync
+          image: public.ecr.aws/aws-cli/aws-cli@sha256:964336bffb17b82d2e84a2526b0672e70a2c881544e1a281acaca1d9aa41b536
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: 64Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+          command: ["sh", "-c"]
+          args:
+            - |
+              CACHE_S3=s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/qwen3-8b/trn2
+              while true; do
+                sleep 300
+                if [ -n "$(ls -A /models/neuron_cache_trn2 2>/dev/null)" ]; then
+                  aws s3 sync /models/neuron_cache_trn2/ "$CACHE_S3/" --region ${REGION} --only-show-errors 2>&1 | tail -2
+                fi
+              done
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+      volumes:
+        - name: model-storage
+          hostPath:
+            path: /models
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-llm
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+spec:
+  selector:
+    app: storeai-llm
+  ports:
+    - port: 8080
+      targetPort: 8080

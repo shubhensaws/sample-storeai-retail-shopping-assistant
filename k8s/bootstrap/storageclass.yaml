@@ -1,0 +1,16 @@
+# Default StorageClass for EKS Auto Mode (EBS CSI: ebs.csi.eks.amazonaws.com).
+# Auto Mode does not create a default StorageClass; the legacy in-tree `gp2`
+# (kubernetes.io/aws-ebs) does not work. Applied as a cluster bootstrap on `up`.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: auto-ebs-gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.eks.amazonaws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  type: gp3
+  encrypted: "true"

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StoreAI v2 — Deployment Config Builder</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>StoreAI v2 — Deployment Config Builder</h1>
+    <p>Build <code>storeai.config.json</code>. Same output as <code>deploy/storeai config init</code>.
+       Static/local — no data leaves this page.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Global</h2>
+      <div class="grid">
+        <label>Environment
+          <select id="env"><option>dev</option><option>prod</option></select></label>
+        <label>Region (resources)<input id="region" value="us-east-2" /></label>
+        <label>TF state bucket <input id="tfStateBucket" value="your-terraform-state-bucket" /></label>
+        <label>TF state bucket region <input id="stateBucketRegion" value="us-east-1" /></label>
+        <label>TF state key prefix <input id="stateKeyPrefix" value="retail-shopping-agent/storeai" /></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Prerequisites <span class="hint">(all optional; needed only for the modules that use them)</span></h2>
+      <div class="grid">
+        <label>Cognito admin email <input id="adminEmail" placeholder="blank = admin@storeai.local (set pw via CLI)" /></label>
+        <label>HeyGen API key <input id="heygenApiKey" type="password" placeholder="required if avatar enabled" /></label>
+        <label>Capacity Block reservation id <input id="cbReservationId" placeholder="required for Neuron models" /></label>
+        <label>CB instance type <input id="cbInstanceType" value="trn2.48xlarge" /></label>
+        <label>CB availability zone <input id="cbAz" placeholder="e.g. us-east-2b" /></label>
+        <label>Compiled LLM S3 path <input id="llmS3Path" placeholder="blank = compile" /></label>
+        <label>Compiled image-edit S3 path <input id="vtonS3Path" placeholder="blank = compile" /></label>
+        <label>Custom domain <input id="customDomain" placeholder="optional" /></label>
+        <label>Route53 hosted zone id <input id="hostedZoneId" placeholder="required with custom domain" /></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Modules <span class="hint">(hard dependencies auto-enable — shown below)</span></h2>
+      <div id="modules" class="modules"></div>
+      <p id="depNote" class="depnote"></p>
+    </section>
+
+    <section>
+      <h2>Output</h2>
+      <div class="actions">
+        <button id="genBtn">Generate config</button>
+        <button id="dlBtn">Download storeai.config.json</button>
+        <button id="cpBtn">Copy config</button>
+        <button id="cpCmdBtn">Copy CLI command</button>
+        <span id="status" class="status"></span>
+      </div>
+      <textarea id="output" spellcheck="false" readonly></textarea>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

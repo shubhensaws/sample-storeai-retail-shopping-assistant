@@ -1,0 +1,89 @@
+# vton-fashn (L1) — FASHN VTON v1.5 on GPU. Service name/port MUST match the
+# client contract the orchestrator + tryon-mcp call: storeai-fashn-vton:8081.
+# Scheduled onto the GPU NodePool (taint nvidia.com/gpu) via the toleration +
+# nvidia.com/gpu resource request. Rendered by deploy/modules/fashn-model.sh.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-fashn-vton
+  labels:
+    app: storeai-fashn-vton
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: storeai-fashn-vton
+  template:
+    metadata:
+      labels:
+        app: storeai-fashn-vton
+    spec:
+      nodeSelector:
+        storeai/accelerator: nvidia
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fashn-vton
+          image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/storeai-${ENV}-vton-fashn:${IMAGE_TAG}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8081
+          env:
+            - name: WEIGHTS_DIR
+              value: /weights
+            - name: HF_HOME
+              value: /weights/hf
+          resources:
+            requests:
+              cpu: "1"
+              memory: 7Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+          # Weights are baked into the image (D-038) — no volume needed.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            failureThreshold: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-fashn-vton
+  labels:
+    app: storeai-fashn-vton
+spec:
+  type: ClusterIP
+  selector:
+    app: storeai-fashn-vton
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP

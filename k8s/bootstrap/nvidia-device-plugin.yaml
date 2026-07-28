@@ -1,0 +1,71 @@
+# NVIDIA device plugin + time-slicing for the GPU Managed Node Group (D-040 / D-039 goal).
+# On the AL2023_x86_64_NVIDIA MNG the driver is host-installed, so a self-hosted device plugin
+# with time-slicing works end-to-end (unlike Auto Mode, where sliced pods lost driver injection).
+# Scoped via nodeSelector storeai/accelerator=nvidia so it runs ONLY on the GPU MNG nodes (not
+# Auto Mode nodes, which have their own managed plugin — KEP-5004). replicas:4 lets whisper +
+# fashn (and headroom) share one g6.xlarge L4.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-device-plugin-config
+  namespace: kube-system
+data:
+  any: |-
+    version: v1
+    flags:
+      migStrategy: none
+    sharing:
+      timeSlicing:
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-device-plugin
+  template:
+    metadata:
+      labels:
+        app: nvidia-device-plugin
+    spec:
+      nodeSelector:
+        storeai/accelerator: nvidia
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      priorityClassName: system-node-critical
+      containers:
+        - name: nvidia-device-plugin
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.17.1
+          imagePullPolicy: Always
+          env:
+            - name: CONFIG_FILE
+              value: /config/any
+          resources:
+            requests:
+              cpu: "50m"
+              memory: 64Mi
+            limits:
+              cpu: "250m"
+              memory: 256Mi
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: config
+          configMap:
+            name: nvidia-device-plugin-config

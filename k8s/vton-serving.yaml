@@ -1,0 +1,107 @@
+# Qwen-Image-Edit VTON server on the Trn2 CB MNG (Phase 4 / D-040).
+# Scheduled by my-scheduler onto storeai/accelerator=neuron. v3_cfg => world_size 8 (NEURON_RT_NUM_CORES=8);
+# requests 16 NeuronCores (valid Trn2 count; uses 8). serve.py pulls compiled artifacts from S3
+# (vton-qwen/trn2) if not already on the node's NVMe. Exposes /infer (matches tryon-mcp contract).
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-vton
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: storeai-vton
+  template:
+    metadata:
+      labels:
+        app: storeai-vton
+    spec:
+      schedulerName: my-scheduler
+      nodeSelector:
+        storeai/accelerator: neuron
+      tolerations:
+        - key: aws.amazon.com/neuron
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: vton
+          image: public.ecr.aws/neuron/pytorch-inference-vllm-neuronx:0.16.0-neuronx-py312-sdk2.29.0-ubuntu24.04
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          command: ["bash", "-c"]
+          args:
+            - |
+              set -e
+              aws s3 sync s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/vton-code/ /work/ --region ${REGION} --only-show-errors
+              cd /work
+              pip install -q --no-deps "diffusers==0.36.0" qwen-vl-utils 2>&1 | tail -3 || true
+              pip install -q accelerate torchvision pillow 2>&1 | tail -3 || true
+              export PATH_PREFIX="/vton"
+              export NEURON_RT_NUM_CORES=8
+              echo "Starting VTON server on :8081 (world_size 8)..."
+              python serve.py \
+                --compiled_models_dir /mnt/nvme/compiled_models \
+                --s3_models_uri s3://storeai-${ENV}-neuron-cache-${ACCOUNT_ID}/vton-qwen/trn2 \
+                --height 1024 --width 512 --use_v3_cfg --patch_multiplier 3 \
+                --port 8081
+          ports:
+            - containerPort: 8081
+          env:
+            - name: NEURON_RT_VIRTUAL_CORE_SIZE
+              value: "2"
+            - name: NEURON_LOGICAL_NC_CONFIG
+              value: "2"
+          resources:
+            requests:
+              cpu: "8"
+              memory: 256Gi
+              aws.amazon.com/neuroncore: "16"
+            limits:
+              cpu: "32"
+              memory: 512Gi
+              aws.amazon.com/neuroncore: "16"
+          readinessProbe:
+            httpGet: { path: /health, port: 8081 }
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 60
+          volumeMounts:
+            - name: nvme
+              mountPath: /mnt/nvme
+            - name: work
+              mountPath: /work
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: nvme
+          hostPath:
+            path: /mnt/nvme
+            type: DirectoryOrCreate
+        - name: work
+          emptyDir: {}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "32Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-vton
+spec:
+  selector:
+    app: storeai-vton
+  ports:
+    - port: 8081
+      targetPort: 8081

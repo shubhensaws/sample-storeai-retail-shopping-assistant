@@ -1,0 +1,128 @@
+# StoreAI v2 — Module Registry (machine-readable dependency graph)
+# Consumed by deploy/lib/resolver.sh. The human-readable module list is in docs/architecture.md (Modules).
+# Layers: infra | L1 (generic model) | L2 (app/domain) | L3 (gateway) | edge | ops
+version: 1
+
+modules:
+  # ---- infra ----
+  data-plane:
+    layer: infra
+    kind: terraform
+    tf_targets: ["module.data_plane"]
+    depends_on: []
+
+  ecr:
+    layer: infra
+    kind: terraform
+    tf_targets: ["module.ecr"]
+    depends_on: []
+
+  eks:
+    layer: infra
+    kind: terraform
+    tf_targets: ["module.network", "module.eks"]
+    depends_on: [network]
+    prereqs_optional: [capacity_block_reservation_id, custom_domain, hosted_zone_id]
+
+  network:
+    layer: infra
+    kind: terraform
+    tf_targets: ["module.network"]
+    depends_on: []
+
+  # ---- L2 backend (Lambdas / Terraform) ----
+  mcp-tools:
+    layer: L2
+    kind: terraform
+    tf_targets: ["module.lambdas"]
+    depends_on: [data-plane, network]
+
+  vton:
+    layer: L2
+    kind: lambda
+    depends_on: [data-plane, mcp-tools, litellm-gateway]
+    engine_dependency: { one_of: [image-edit-model, fashn-model] }  # default: prefer image-edit-model (OQ-4)
+
+  # ---- L3 gateway ----
+  litellm-gateway:
+    layer: L3
+    kind: helm
+    depends_on: [eks, ecr]
+
+  # ---- L2 apps on EKS ----
+  orchestrator:
+    layer: L2
+    kind: k8s
+    depends_on: [eks, ecr, mcp-tools, data-plane, litellm-gateway]
+
+  voice-nova:
+    layer: L2
+    kind: k8s
+    depends_on: [eks, ecr]           # Bedrock direct (D-021), not via gateway
+
+  avatar-heygen:
+    layer: L2
+    kind: k8s
+    depends_on: [eks, ecr]
+    prereqs_required: [heygen_api_key]
+
+  # ---- L1 generic model servers (behind the gateway) ----
+  llm:
+    layer: L1
+    kind: k8s
+    depends_on: [eks, ecr, litellm-gateway]
+    accelerator: neuron
+    prereqs_required: [capacity_block_reservation_id]
+    prereqs_optional: [llm_model_s3_path]   # else compile (D-005)
+
+  image-edit-model:
+    layer: L1
+    kind: k8s
+    depends_on: [eks, ecr, litellm-gateway]
+    accelerator: neuron
+    prereqs_required: [capacity_block_reservation_id]
+    prereqs_optional: [vton_model_s3_path]  # else compile (D-005)
+
+  fashn-model:
+    layer: L1
+    kind: k8s
+    depends_on: [eks, ecr, litellm-gateway]
+    accelerator: gpu
+    # status: active — serving component now built in-repo (D-038)
+
+  whisper:
+    layer: L1
+    kind: k8s
+    depends_on: [eks, ecr, litellm-gateway]
+    accelerator: gpu
+
+  tts:
+    layer: L1
+    kind: k8s
+    depends_on: [eks, ecr, litellm-gateway]
+    status: future
+
+  # ---- edge ----
+  cdn:
+    layer: edge
+    kind: terraform
+    tf_targets: ["module.cdn"]
+    depends_on: [data-plane]
+    prereqs_optional: [custom_domain, hosted_zone_id]
+
+  frontend:
+    layer: edge
+    kind: build
+    depends_on: [cdn]
+
+  # ---- ops ----
+  seed-data:
+    layer: ops
+    kind: script
+    depends_on: [data-plane]
+
+  cognito-user:
+    layer: ops
+    kind: script
+    depends_on: [data-plane]
+    prereqs_optional: [admin_email]

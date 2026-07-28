@@ -1,0 +1,177 @@
+# Orchestrator (L2) — LangGraph chat brain. All LLM calls route through the
+# LiteLLM gateway (D-010); MCP tools via Lambda invoke; direct DynamoDB/S3 for
+# booth queue, chat history, image serving. Rendered by deploy/modules/orchestrator.sh.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-orchestrator
+  labels:
+    app: storeai-orchestrator
+spec:
+  replicas: ${ORCH_REPLICAS}
+  selector:
+    matchLabels:
+      app: storeai-orchestrator
+  template:
+    metadata:
+      labels:
+        app: storeai-orchestrator
+    spec:
+      serviceAccountName: storeai-services
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: orchestrator
+          image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/storeai-${ENV}-orchestrator:${IMAGE_TAG}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AWS_REGION
+              value: "${REGION}"
+            - name: ENV
+              value: "${ENV}"
+            - name: ACCOUNT_ID
+              value: "${ACCOUNT_ID}"
+            # LLM routing through the gateway (gateway model names, not raw Bedrock ids)
+            - name: LITELLM_URL
+              value: "http://litellm.default.svc.cluster.local:4000"
+            - name: LITELLM_API_KEY
+              value: "${LITELLM_MASTER_KEY}"
+            - name: CHAT_MODEL
+              value: "bedrock-claude"
+            - name: ROUTER_MODEL
+              value: "bedrock-haiku"
+            - name: PRODUCT_IMAGES_BUCKET
+              value: "storeai-${ENV}-product-images-${ACCOUNT_ID}"
+            # Cognito app-level auth (enforced when COGNITO_USER_POOL_ID is non-empty)
+            - name: COGNITO_USER_POOL_ID
+              value: "${COGNITO_USER_POOL_ID}"
+            - name: COGNITO_APP_CLIENT_ID
+              value: "${COGNITO_APP_CLIENT_ID}"
+            - name: COGNITO_REGION
+              value: "${REGION}"
+            # VTON output verification + FASHN fallback toggle (default on)
+            - name: VTON_SAFETY_ENABLED
+              value: "${VTON_SAFETY_ENABLED}"
+            # Public base URL for shareable links (try-on QR gallery); empty disables the QR
+            - name: PUBLIC_BASE_URL
+              value: "${PUBLIC_BASE_URL}"
+            - name: HOME
+              value: /tmp
+            - name: TMPDIR
+              value: /tmp
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeai-orchestrator
+  labels:
+    app: storeai-orchestrator
+spec:
+  type: ClusterIP
+  selector:
+    app: storeai-orchestrator
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: storeai-orchestrator
+  labels:
+    app: storeai-orchestrator
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+spec:
+  ingressClassName: internal-alb
+  rules:
+    - http:
+        paths:
+          - path: /stt
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-voice-nova
+                port:
+                  number: 8505
+          - path: /tts
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-voice-nova
+                port:
+                  number: 8505
+          - path: /whisper
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-whisper
+                port:
+                  number: 8765
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: liveavatar-svc
+                port:
+                  number: 8502
+          - path: /vton
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-vton
+                port:
+                  number: 8081
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-orchestrator
+                port:
+                  number: 8080
+

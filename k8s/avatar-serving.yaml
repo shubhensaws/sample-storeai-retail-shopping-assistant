@@ -1,0 +1,89 @@
+# avatar-heygen (L2) — LiveAvatar relay (api.liveavatar.com). arm64 (no GPU).
+# Service MUST be liveavatar-svc:8502 — the orchestrator proxies /avatar,/avatars,
+# /token,/ws to it. API key injected from SSM at deploy. Rendered by deploy/modules/avatar-heygen.sh.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeai-avatar
+  labels:
+    app: storeai-avatar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storeai-avatar
+  template:
+    metadata:
+      labels:
+        app: storeai-avatar
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: avatar
+          image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/storeai-${ENV}-liveavatar:${IMAGE_TAG}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 8502
+          env:
+            - name: LIVEAVATAR_API_KEY
+              value: "${LIVEAVATAR_API_KEY}"
+            - name: LIVEAVATAR_PORT
+              value: "8502"
+            - name: HOME
+              value: /tmp
+            - name: TMPDIR
+              value: /tmp
+          resources:
+            requests:
+              cpu: 128m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /avatars
+              port: 8502
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8502
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: liveavatar-svc
+  labels:
+    app: storeai-avatar
+spec:
+  type: ClusterIP
+  selector:
+    app: storeai-avatar
+  ports:
+    - port: 8502
+      targetPort: 8502
+      protocol: TCP

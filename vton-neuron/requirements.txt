@@ -1,0 +1,11 @@
+diffusers==0.36.0
+# Pin <5: neuronx_distributed.pipeline.trace needs transformers.utils.fx.HFTracer,
+# removed in transformers 5.x (v1 ran on 4.x). Also satisfies vllm's transformers<5.
+transformers>=4.45.0,<5
+accelerate
+qwen-vl-utils
+torchvision
+pillow
+# Parallel/accelerated HF downloads (used with HF_TOKEN)
+hf_transfer
+PyJWT[crypto]>=2.8  # Cognito JWT validation (only used when COGNITO_USER_POOL_ID is set)

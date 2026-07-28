@@ -1,0 +1,141 @@
+{
+  "version": "1",
+  "global": {
+    "env": "dev",
+    "region": "us-east-2",
+    "stateBucketRegion": "us-east-1",
+    "accountId": "auto",
+    "tfStateBucket": "your-terraform-state-bucket",
+    "stateKeyPrefix": "retail-shopping-agent/storeai",
+    "capacityBlockAz": null,
+    "customDomain": "",
+    "hostedZoneId": ""
+  },
+  "prerequisites": {
+    "capacityBlock": {
+      "reservationId": "",
+      "instanceType": "trn2.48xlarge",
+      "az": "",
+      "nodeCount": 1
+    },
+    "models": {
+      "llmS3Path": "",
+      "vtonS3Path": "",
+      "compileIfMissing": true
+    },
+    "avatar": {
+      "provider": "heygen",
+      "apiKey": ""
+    },
+    "dns": {
+      "customDomain": "",
+      "hostedZoneId": ""
+    },
+    "auth": {
+      "adminEmail": ""
+    },
+    "huggingface": {
+      "token": ""
+    }
+  },
+  "engines": {
+    "llm": {
+      "default": "bedrock-claude",
+      "router": "bedrock-haiku",
+      "backends": {
+        "bedrock-claude": {
+          "enabled": true,
+          "provider": "bedrock",
+          "model": "us.anthropic.claude-sonnet-4-6"
+        },
+        "bedrock-haiku": {
+          "enabled": true,
+          "provider": "bedrock",
+          "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        "qwen3-neuron": {
+          "enabled": false,
+          "provider": "vllm",
+          "url": "http://storeai-llm:8080"
+        }
+      }
+    },
+    "vton": {
+      "default": "auto",
+      "engines": {
+        "image-edit-model": {
+          "enabled": false,
+          "kind": "neuron"
+        },
+        "fashn-model": {
+          "enabled": true,
+          "kind": "gpu"
+        }
+      }
+    }
+  },
+  "modules": {
+    "data-plane": {
+      "enabled": true
+    },
+    "ecr": {
+      "enabled": true
+    },
+    "eks": {
+      "enabled": true
+    },
+    "mcp-tools": {
+      "enabled": true
+    },
+    "litellm-gateway": {
+      "enabled": true
+    },
+    "orchestrator": {
+      "enabled": true,
+      "replicas": 2
+    },
+    "voice-nova": {
+      "enabled": true
+    },
+    "whisper": {
+      "enabled": true
+    },
+    "avatar-heygen": {
+      "enabled": true
+    },
+    "vton": {
+      "enabled": false
+    },
+    "image-edit-model": {
+      "enabled": false
+    },
+    "fashn-model": {
+      "enabled": true
+    },
+    "llm": {
+      "enabled": false
+    },
+    "tts": {
+      "enabled": false
+    },
+    "cdn": {
+      "enabled": true,
+      "demoMode": "standard"
+    },
+    "frontend": {
+      "enabled": true
+    },
+    "seed-data": {
+      "enabled": true
+    },
+    "cognito-user": {
+      "enabled": true
+    }
+  },
+  "imageEdit": {
+    "scheme": "internal",
+    "hostname": "",
+    "certArn": "",
+    "authEnabled": false
+  }
+}

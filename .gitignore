@@ -1,0 +1,114 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.egg
+.aws-sam/
+
+# ==========================
+# Node.js / Frontend
+# ==========================
+node_modules/
+.next/
+out/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+/coverage
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vercel
+
+# ==========================
+# Terraform
+# ==========================
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ==========================
+# Environment & Secrets
+# ==========================
+.env
+.env.*
+!.env.example
+*.pem
+
+# ==========================
+# OS / IDE / Local Tooling
+# ==========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.kiro/
+
+# ASH (security scan) output — keep .ash/.ash.yaml config tracked, ignore scan results
+.ash/ash_output/
+*.swp
+*.swo
+*~
+
+# ==========================
+# Build & Temp
+# ==========================
+/tmp/
+*.pdf
+
+# ==========================
+# Project-specific
+# ==========================
+# Frontend build output (regenerated on deploy)
+frontend/out/
+
+# Docs that shouldn't be in the shared repo
+docs/linkedin-post-mumbai.md
+docs/PROJECT_DOCUMENTATION.html
+docs/V1_VS_V2_COMPARISON.pdf
+
+# Generated deploy config (user-specific)
+storeai.config.json
+*.storeai.config.json
+
+# ==========================
+# Generated: shared VTON prompt-engineering package is synced from
+# components/shared/vton_engines into each consumer build context
+# (scripts/sync-vton-engines.sh). Edit the canonical copy only.
+# ==========================
+components/orchestrator/app/vton_engines/
+components/mcp/tryon-mcp/vton_engines/
+preflabel-iri-cache.json
+**/.ipynb_checkpoints/
+
+# Local-only test scratch dir (not shipped)
+/tests/
+
+# Vendored Lambda dependencies (built at deploy time, e.g. memory-mcp boto3 for s3vectors)
+components/mcp/*/_vendor/

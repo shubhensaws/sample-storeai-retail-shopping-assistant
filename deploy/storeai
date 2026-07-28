@@ -1,0 +1,241 @@
+#!/usr/bin/env bash
+###############################################################################
+# storeai — modular deployment CLI for StoreAI v2
+#
+#   storeai up      [--config F] [--module M]... [--env E] [--region R] [--yes]
+#   storeai down    [--config F] [--module M]... [--yes]
+#   storeai plan    [--config F] [--module M]...
+#   storeai status  [--config F]
+#   storeai config  validate [F] | init [--interactive]
+#
+# Deploys only ENABLED modules (or those named with --module) in dependency
+# order, resolving hard deps automatically (see deploy/config/registry.yaml).
+# Phase 1 implements the terraform-kind modules; other kinds print a pending
+# notice until their phase lands.
+###############################################################################
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="${SCRIPT_DIR}/lib"
+CONFIG_DIR="${SCRIPT_DIR}/config"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+export LIB_DIR CONFIG_DIR PROJECT_DIR
+
+# shellcheck disable=SC1090
+source "${LIB_DIR}/preflight.sh"
+source "${LIB_DIR}/tf.sh"
+
+CMD="${1:-}"; shift || true
+CONFIG="${STOREAI_CONFIG:-${CONFIG_DIR}/defaults.json}"
+MODULES=()
+AUTO="no"
+ENV_OVERRIDE=""
+REGION_OVERRIDE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --config) CONFIG="$2"; shift 2;;
+    --module) MODULES+=("$2"); shift 2;;
+    --env) ENV_OVERRIDE="$2"; shift 2;;
+    --region) REGION_OVERRIDE="$2"; shift 2;;
+    --yes|-y) AUTO="yes"; shift;;
+    --all) MODULES=(); shift;;
+    *) EXTRA="${1}"; shift;;
+  esac
+done
+
+# Normalize config to an absolute path (tf.sh evaluates helpers inside `cd $TF_DIR`)
+if [ -f "$CONFIG" ]; then CONFIG="$(cd "$(dirname "$CONFIG")" && pwd)/$(basename "$CONFIG")"; fi
+
+# Build --module args for resolve.py + module filter
+MODULE_ARGS=""
+for m in "${MODULES[@]:-}"; do [ -n "$m" ] && MODULE_ARGS="${MODULE_ARGS} --module ${m}"; done
+export MODULE_ARGS
+
+resolve() { python3 "${LIB_DIR}/resolve.py" --config "$CONFIG" ${MODULE_ARGS} "$@"; }
+mod_kind() { python3 -c "import yaml,sys; print((yaml.safe_load(open('${CONFIG_DIR}/registry.yaml'))['modules'].get('$1') or {}).get('kind',''))"; }
+
+require_config() { [ -f "$CONFIG" ] || { echo "config not found: $CONFIG"; exit 1; }; }
+
+do_up() {
+  require_config
+  preflight "$CONFIG"
+  # Single source of truth: populate each consumer's build context with the shared
+  # VTON prompt-engineering package before building/packaging.
+  [ -x "${PROJECT_DIR}/scripts/sync-vton-engines.sh" ] && { echo "== sync shared vton_engines =="; "${PROJECT_DIR}/scripts/sync-vton-engines.sh"; }
+  resolve validate >/dev/null
+  local order; order=$(resolve order)
+  echo "== Deploy order: ${order} =="
+  tf_init "$CONFIG"
+  # Apply all terraform-kind modules together (one apply w/ targets), then others.
+  local tf_targets; tf_targets=$(resolve tf-targets)
+  # Edge (cdn) origin needs the post-k8s ALB — a CloudFront VPC origin requires a REAL ALB ARN,
+  # so exclude cdn from the pre-k8s pass and create/update it in the post-k8s pass below.
+  local tf_targets_pre; tf_targets_pre=$(echo "$tf_targets" | sed 's/-target=module\.cdn//g' | xargs)
+  if [ -n "$tf_targets_pre" ]; then
+    echo "== Terraform apply (pre-k8s): ${tf_targets_pre} =="
+    tf_apply "$CONFIG" "$AUTO" "$tf_targets_pre"
+  fi
+  # Cluster-facing modules: ensure kubeconfig once.
+  local need_kube=0
+  for m in $order; do case "$(mod_kind "$m")" in helm|k8s) need_kube=1;; esac; done
+  if [ "$need_kube" = 1 ]; then
+    source "${LIB_DIR}/k8s.sh"; k8s_kubeconfig "$CONFIG"
+    # Optional HuggingFace token → k8s secret `hf-token` (referenced optionally by the llm init +
+    # vton compile). Present => faster authenticated model downloads; absent => public download.
+    local hf_tok; hf_tok=$(resolve get prerequisites.huggingface.token 2>/dev/null)
+    if [ -n "$hf_tok" ] && [ "$hf_tok" != "None" ]; then
+      kubectl create secret generic hf-token -n default --from-literal=token="$hf_tok" \
+        --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>&1 && echo "  hf-token secret set (authenticated HF downloads)"
+    else
+      kubectl delete secret hf-token -n default --ignore-not-found >/dev/null 2>&1 || true
+      echo "  no HF token in config — public HF downloads (slower; set prerequisites.huggingface.token to speed up)"
+    fi
+    # Cluster bootstrap (default StorageClass now; Neuron DRA driver in Phase 4).
+    if compgen -G "${PROJECT_DIR}/k8s/bootstrap/*.yaml" >/dev/null 2>&1; then
+      echo "== cluster bootstrap =="
+      for f in "${PROJECT_DIR}"/k8s/bootstrap/*.yaml; do kubectl apply -f "$f" >/dev/null && echo "  applied $(basename "$f")"; done
+    fi
+    # Neuron device plugin + scheduler (Trn2-aware) via the Neuron helm chart (D-040).
+    if command -v helm >/dev/null 2>&1; then
+      echo "== neuron device plugin + scheduler (helm) =="
+      helm upgrade --install neuron-helm-chart oci://public.ecr.aws/neuron/neuron-helm-chart \
+        --namespace kube-system --set scheduler.enabled=true --set npd.enabled=false \
+        --set 'scheduler.nodeSelector.kubernetes\.io/arch=amd64' >/dev/null 2>&1 && echo "  neuron helm ok" || echo "  neuron helm skipped"
+    fi
+  fi
+  for m in $order; do
+    # frontend is deferred until after the post-k8s cdn apply: it uploads to the
+    # CDN's S3 bucket and invalidates the distribution, both created by module.cdn
+    # (which is applied post-k8s because CloudFront needs the real ALB origin).
+    [ "$m" = "frontend" ] && continue
+    local k; k=$(mod_kind "$m")
+    case "$k" in
+      terraform) : ;;  # handled above
+      helm|k8s|build|script)
+        if [ -f "${SCRIPT_DIR}/modules/${m}.sh" ]; then
+          echo "== deploy ${m} (${k}) =="
+          ( source "${LIB_DIR}/k8s.sh"; source "${LIB_DIR}/helm.sh"; source "${SCRIPT_DIR}/modules/${m}.sh"; mod_deploy "$CONFIG" )
+        else
+          echo "  [pending] '$m' ($k) — deploy/modules/${m}.sh not yet added"
+        fi;;
+      *) echo "  [skip] '$m' unknown kind '$k'";;
+    esac
+  done
+  # Post-k8s: resolve the internal ALB and re-apply ALB-dependent TF (tryon-mcp QWEN/FASHN VTON URL).
+  if [ "$need_kube" = 1 ] && [ -n "$tf_targets" ]; then
+    local alb
+    alb=$(kubectl get ingress storeai-orchestrator -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+    if [ -n "$alb" ]; then
+      local rgn; rgn=$(resolve get global.region); rgn="${rgn:-us-east-2}"
+      export VTON_ALB_URL="http://${alb}"
+      export ALB_DNS_NAME="$alb"
+      export ALB_ARN=$(aws elbv2 describe-load-balancers --region "$rgn" --query "LoadBalancers[?DNSName=='${alb}'].LoadBalancerArn | [0]" --output text 2>/dev/null || echo "")
+      local post_targets="-target=module.lambdas"
+      echo "$tf_targets" | grep -q "module.cdn" && post_targets="${post_targets} -target=module.cdn"
+      # Standalone image-edit endpoint: resolve its own ALB + create the Route53 record.
+      local iealb
+      iealb=$(kubectl get ingress image-edit -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+      if [ -n "$iealb" ]; then
+        export IMAGE_EDIT_ALB_DNS_NAME="$iealb"
+        post_targets="${post_targets} -target=aws_route53_record.image_edit"
+        echo "  image-edit endpoint ALB: ${iealb}"
+      fi
+      echo "== post-k8s terraform apply (ALB wiring: ${alb}) =="
+      tf_apply "$CONFIG" "$AUTO" "$post_targets"
+    fi
+  fi
+  # Frontend build + publish — deferred to run last, after module.cdn exists
+  # (post-k8s) so its frontend_bucket + cloudfront_distribution_id outputs resolve.
+  if echo " $order " | grep -q " frontend " && [ -f "${SCRIPT_DIR}/modules/frontend.sh" ]; then
+    echo "== deploy frontend (build) =="
+    ( source "${LIB_DIR}/k8s.sh"; source "${LIB_DIR}/helm.sh"; source "${SCRIPT_DIR}/modules/frontend.sh"; mod_deploy "$CONFIG" )
+  fi
+  echo "Done."
+}
+
+do_down() {
+  require_config
+  local order rorder
+  order=$(resolve order)
+  rorder=$(echo "$order" | awk '{for(i=NF;i>=1;i--) printf "%s ",$i}')
+  echo "== Teardown (reverse dependency order): ${rorder}=="
+  # Non-terraform teardown hooks run first (reverse order).
+  local need_kube=0
+  for m in $rorder; do case "$(mod_kind "$m")" in helm|k8s) need_kube=1;; esac; done
+  [ "$need_kube" = 1 ] && { source "${LIB_DIR}/k8s.sh"; k8s_kubeconfig "$CONFIG" 2>/dev/null || true; }
+  for m in $rorder; do
+    local k; k=$(mod_kind "$m")
+    case "$k" in
+      helm|k8s|build|script)
+        if [ -f "${SCRIPT_DIR}/modules/${m}.sh" ]; then
+          echo "== teardown ${m} (${k}) =="
+          ( source "${LIB_DIR}/k8s.sh"; source "${LIB_DIR}/helm.sh"; source "${SCRIPT_DIR}/modules/${m}.sh"; mod_teardown "$CONFIG" 2>/dev/null || true )
+        fi;;
+    esac
+  done
+  # Terraform backbone. --all (no --module) => full destroy of everything in state.
+  tf_init "$CONFIG"
+  local tf_targets=""
+  if [ -n "${MODULE_ARGS// /}" ]; then tf_targets=$(resolve tf-targets); fi
+  if [ -n "$tf_targets" ]; then
+    echo "== terraform destroy (targeted): ${tf_targets} =="
+    tf_destroy "$CONFIG" "$AUTO" "$tf_targets"
+  else
+    echo "== terraform destroy (ALL state resources) =="
+    tf_destroy "$CONFIG" "$AUTO" ""
+  fi
+  echo "Cleanup complete. (TF state bucket is preserved — user-provided, D-013/D-025)"
+}
+
+do_plan() {
+  require_config
+  local order; order=$(resolve order)
+  echo "== Resolved deploy order: ${order} =="
+  resolve validate || true
+  tf_init "$CONFIG"
+  tf_plan "$CONFIG" "$(resolve tf-targets)"
+}
+
+do_status() {
+  require_config
+  echo "== Enabled/resolved modules =="; resolve order
+  echo "== Terraform state resources =="
+  ( cd "$TF_DIR" && terraform state list 2>/dev/null || echo "  (no state — run 'storeai up')" )
+}
+
+do_config() {
+  local sub="${EXTRA:-validate}"
+  case "$sub" in
+    validate)
+      python3 - "$CONFIG" "${CONFIG_DIR}/schema.json" <<'PY'
+import json,sys
+cfg,schema=sys.argv[1],sys.argv[2]
+c=json.load(open(cfg))
+try:
+    import jsonschema
+    jsonschema.validate(c, json.load(open(schema)))
+    print(f"config schema valid: {cfg}")
+except ImportError:
+    print("warn: jsonschema not installed - schema check skipped (JSON parse OK)")
+except Exception as e:
+    print(f"INVALID config: {e}"); sys.exit(1)
+PY
+      resolve validate;;
+    init)
+      local out="${CONFIG_OUT:-storeai.config.json}"
+      python3 "${LIB_DIR}/config_init.py" --output "$out";;
+    *) echo "usage: storeai config validate|init";;
+  esac
+}
+
+case "$CMD" in
+  up) do_up;;
+  down) do_down;;
+  plan) do_plan;;
+  status) do_status;;
+  config) do_config;;
+  ""|help|-h|--help)
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//';;
+  *) echo "unknown command: $CMD (try: up|down|plan|status|config)"; exit 1;;
+esac

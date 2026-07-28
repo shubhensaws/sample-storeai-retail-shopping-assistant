@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://storeai/deploy/config/schema.json",
+  "title": "StoreAI v2 deploy config",
+  "type": "object",
+  "required": [
+    "version",
+    "global",
+    "modules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "global": {
+      "type": "object",
+      "required": [
+        "env",
+        "region",
+        "tfStateBucket"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "env": {
+          "type": "string",
+          "enum": [
+            "dev",
+            "prod"
+          ]
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stateBucketRegion": {
+          "type": "string"
+        },
+        "accountId": {
+          "type": "string"
+        },
+        "tfStateBucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stateKeyPrefix": {
+          "type": "string"
+        },
+        "capacityBlockAz": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "customDomain": {
+          "type": "string"
+        },
+        "hostedZoneId": {
+          "type": "string"
+        }
+      }
+    },
+    "prerequisites": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "capacityBlock": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "reservationId": {
+              "type": "string"
+            },
+            "instanceType": {
+              "type": "string"
+            },
+            "az": {
+              "type": "string"
+            },
+            "nodeCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "models": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "llmS3Path": {
+              "type": "string"
+            },
+            "vtonS3Path": {
+              "type": "string"
+            },
+            "compileIfMissing": {
+              "type": "boolean"
+            }
+          }
+        },
+        "avatar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "apiKey": {
+              "type": "string"
+            }
+          }
+        },
+        "dns": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "customDomain": {
+              "type": "string"
+            },
+            "hostedZoneId": {
+              "type": "string"
+            }
+          }
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "adminEmail": {
+              "type": "string",
+              "description": "Admin sign-in email. A real address gets an emailed Cognito invite (you set your own password on first sign-in); blank creates admin@storeai.local with no password (set it via the CLI command the deployer prints)."
+            },
+            "tempPassword": {
+              "type": "string",
+              "description": "DEPRECATED and ignored — passwords are no longer set from config. Kept only for backward compatibility; safe to remove."
+            }
+          }
+        },
+        "huggingface": {
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "llm": {
+          "type": "object",
+          "properties": {
+            "default": {
+              "type": "string"
+            },
+            "backends": {
+              "type": "object"
+            }
+          }
+        },
+        "vton": {
+          "type": "object",
+          "properties": {
+            "default": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "image-edit-model",
+                "fashn-model"
+              ]
+            },
+            "engines": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "replicas": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "demoMode": {
+            "type": "string",
+            "enum": [
+              "booth",
+              "standard"
+            ]
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      }
+    },
+    "imageEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "internal",
+            "internet-facing"
+          ]
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "certArn": {
+          "type": "string"
+        },
+        "authEnabled": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

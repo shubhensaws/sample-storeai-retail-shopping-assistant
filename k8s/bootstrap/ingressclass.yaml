@@ -1,0 +1,21 @@
+# Internal ALB IngressClass for EKS Auto Mode (controller eks.amazonaws.com/alb).
+# scheme=internal → the ALB lives in private subnets (discovered via the
+# kubernetes.io/role/internal-elb subnet tags set by the network module). The
+# ALB is CloudFront's only reachable target via a CloudFront VPC origin (D-031).
+apiVersion: eks.amazonaws.com/v1
+kind: IngressClassParams
+metadata:
+  name: internal-alb
+spec:
+  scheme: internal
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: internal-alb
+spec:
+  controller: eks.amazonaws.com/alb
+  parameters:
+    apiGroup: eks.amazonaws.com
+    kind: IngressClassParams
+    name: internal-alb

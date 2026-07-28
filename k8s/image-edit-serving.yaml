@@ -1,0 +1,37 @@
+# Standalone image-edit (Qwen VTON) endpoint — a dedicated Ingress in front of the
+# existing storeai-vton Service. No new Deployment: serve.py already answers at "/"
+# (HTML tester), /infer, /v1/models, /health. This lets the image-edit model be
+# reached on its own hostname, independently of the orchestrator.
+#
+# Rendered by deploy/modules/image-edit-model.sh (envsubst). Vars:
+#   IMAGE_EDIT_SCHEME   internal (default) | internet-facing
+#   IMAGE_EDIT_HOSTNAME e.g. image-edit-dev.example.com
+#   IMAGE_EDIT_CERT_ARN ACM public cert ARN (us-east-2) — TF-created or BYO
+#
+# Auth: enforced in-app (serve.py require_auth) when COGNITO_USER_POOL_ID is set on
+# the storeai-vton Deployment; edge is gated by a CloudFront Function. HTTPS only.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: image-edit
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: ${IMAGE_EDIT_CERT_ARN}
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/group.name: image-edit
+spec:
+  ingressClassName: ${IMAGE_EDIT_INGRESS_CLASS}
+  rules:
+    - host: ${IMAGE_EDIT_HOSTNAME}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: storeai-vton
+                port:
+                  number: 8081

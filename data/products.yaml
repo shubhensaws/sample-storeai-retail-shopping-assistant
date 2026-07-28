@@ -1,0 +1,1396 @@
+categories:
+  mens_tshirt:
+    display_name: T-Shirt
+    gender: men
+    body_region: upper_body
+    garment_type: t-shirt
+  mens_polo:
+    display_name: Polo Shirt
+    gender: men
+    body_region: upper_body
+    garment_type: polo shirt
+  mens_shirt:
+    display_name: Button-Down Shirt
+    gender: men
+    body_region: upper_body
+    garment_type: button-down shirt
+  mens_hoodie:
+    display_name: Hoodie
+    gender: men
+    body_region: upper_body
+    garment_type: hoodie
+  mens_jacket:
+    display_name: Jacket / Blazer
+    gender: men
+    body_region: upper_body
+    garment_type: jacket
+  mens_sweater:
+    display_name: Sweater
+    gender: men
+    body_region: upper_body
+    garment_type: sweater
+  mens_jeans:
+    display_name: Jeans
+    gender: men
+    body_region: lower_body
+    garment_type: jeans
+  mens_chinos:
+    display_name: Chinos / Trousers
+    gender: men
+    body_region: lower_body
+    garment_type: trousers
+  mens_shorts:
+    display_name: Shorts
+    gender: men
+    body_region: lower_body
+    garment_type: shorts
+  mens_joggers:
+    display_name: Joggers / Sweatpants
+    gender: men
+    body_region: lower_body
+    garment_type: joggers
+  womens_tshirt:
+    display_name: T-Shirt
+    gender: women
+    body_region: upper_body
+    garment_type: t-shirt
+  womens_blouse:
+    display_name: Blouse
+    gender: women
+    body_region: upper_body
+    garment_type: blouse
+  womens_croptop:
+    display_name: Crop Top
+    gender: women
+    body_region: upper_body
+    garment_type: crop top
+  womens_hoodie:
+    display_name: Hoodie
+    gender: women
+    body_region: upper_body
+    garment_type: hoodie
+  womens_cardigan:
+    display_name: Cardigan
+    gender: women
+    body_region: upper_body
+    garment_type: cardigan
+  womens_dress:
+    display_name: Dress
+    gender: women
+    body_region: full_body
+    garment_type: dress
+  womens_jeans:
+    display_name: Jeans
+    gender: women
+    body_region: lower_body
+    garment_type: jeans
+  womens_skirt:
+    display_name: Skirt
+    gender: women
+    body_region: lower_body
+    garment_type: skirt
+  womens_shorts:
+    display_name: Shorts
+    gender: women
+    body_region: lower_body
+    garment_type: shorts
+  womens_leggings:
+    display_name: Leggings / Yoga Pants
+    gender: women
+    body_region: lower_body
+    garment_type: leggings
+  sneakers:
+    display_name: Sneakers
+    gender: unisex
+    body_region: feet
+    garment_type: sneakers
+  running_shoes:
+    display_name: Running Shoes
+    gender: unisex
+    body_region: feet
+    garment_type: running shoes
+  loafers:
+    display_name: Loafers / Casual Shoes
+    gender: unisex
+    body_region: feet
+    garment_type: loafers
+  boots:
+    display_name: Boots
+    gender: unisex
+    body_region: feet
+    garment_type: boots
+  sandals:
+    display_name: Sandals
+    gender: unisex
+    body_region: feet
+    garment_type: sandals
+  slippers:
+    display_name: Slippers / Flip-flops
+    gender: unisex
+    body_region: feet
+    garment_type: slippers
+products:
+- product_id: PROD-001
+  name: Classic White Cotton T-Shirt
+  category: mens_tshirt
+  brand: UrbanBasics
+  colors:
+  - White
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 24.99
+  currency: USD
+  material: 100% Cotton
+  description: Comfortable classic fit white crew-neck t-shirt.
+  image_file: mens_tshirt_1_white_cotton.png
+  rating: 4.5
+  reviews_count: 230
+- product_id: PROD-003
+  name: Navy Polo with White Trim
+  category: mens_polo
+  brand: ThreadCraft
+  colors:
+  - Navy
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 44.99
+  currency: USD
+  material: 100% Pique Cotton
+  description: Classic navy polo shirt with white collar trim.
+  image_file: mens_polo_1_navy.png
+  rating: 4.6
+  reviews_count: 312
+- product_id: PROD-004
+  name: Green Striped Polo Shirt
+  category: mens_polo
+  brand: ThreadCraft
+  colors:
+  - Green
+  - White
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 44.99
+  currency: USD
+  material: Cotton Pique
+  description: Green and white horizontal striped polo shirt.
+  image_file: mens_polo_2_striped.png
+  rating: 4.4
+  reviews_count: 198
+- product_id: PROD-006
+  name: Red Plaid Flannel Shirt
+  category: mens_shirt
+  brand: NorthTrail
+  colors:
+  - Red
+  - Navy
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 54.99
+  currency: USD
+  material: Brushed Cotton Flannel
+  description: Red and navy plaid flannel button-down shirt.
+  image_file: mens_shirt_2_plaid.png
+  rating: 4.5
+  reviews_count: 267
+- product_id: PROD-009
+  name: Classic Blue Denim Jacket
+  category: mens_jacket
+  brand: NorthTrail
+  colors:
+  - Blue
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 79.99
+  currency: USD
+  material: 100% Denim
+  description: Classic blue denim jacket with metal buttons.
+  image_file: mens_jacket_1_denim.png
+  rating: 4.7
+  reviews_count: 523
+- product_id: PROD-010
+  name: Charcoal Tailored Blazer
+  category: mens_jacket
+  brand: ThreadCraft
+  colors:
+  - Charcoal
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 129.99
+  currency: USD
+  material: Wool Blend
+  description: Charcoal grey tailored blazer for smart casual wear.
+  image_file: mens_jacket_2_blazer.png
+  rating: 4.8
+  reviews_count: 187
+- product_id: PROD-015
+  name: Khaki Slim-Fit Chinos
+  category: mens_chinos
+  brand: ThreadCraft
+  colors:
+  - Khaki
+  sizes:
+  - '30'
+  - '32'
+  - '34'
+  - '36'
+  price: 49.99
+  currency: USD
+  material: 98% Cotton, 2% Spandex
+  description: Khaki slim-fit chino trousers.
+  image_file: mens_chinos_1_khaki.png
+  rating: 4.4
+  reviews_count: 312
+- product_id: PROD-017
+  name: Olive Cargo Shorts
+  category: mens_shorts
+  brand: NorthTrail
+  colors:
+  - Olive
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 39.99
+  currency: USD
+  material: 100% Cotton
+  description: Olive green cargo shorts with side pockets.
+  image_file: mens_shorts_1_cargo_olive.png
+  rating: 4.3
+  reviews_count: 198
+- product_id: PROD-018
+  name: Beige Chino Shorts
+  category: mens_shorts
+  brand: ThreadCraft
+  colors:
+  - Beige
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 34.99
+  currency: USD
+  material: Cotton Twill
+  description: Beige chino shorts for casual summer wear.
+  image_file: mens_shorts_2_chino_beige.png
+  rating: 4.4
+  reviews_count: 176
+- product_id: PROD-021
+  name: White Relaxed-Fit T-Shirt
+  category: womens_tshirt
+  brand: UrbanBasics
+  colors:
+  - White
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 22.99
+  currency: USD
+  material: 100% Cotton
+  description: White relaxed-fit cotton t-shirt with round neck.
+  image_file: womens_tshirt_1_white_relaxed.png
+  rating: 4.5
+  reviews_count: 412
+- product_id: PROD-022
+  name: Dusty Pink Fitted T-Shirt
+  category: womens_tshirt
+  brand: UrbanBasics
+  colors:
+  - Dusty Pink
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 24.99
+  currency: USD
+  material: Cotton Blend
+  description: Dusty pink fitted t-shirt with short sleeves.
+  image_file: womens_tshirt_2_pink_fitted.png
+  rating: 4.4
+  reviews_count: 287
+- product_id: PROD-023
+  name: Ivory Silk Blouse
+  category: womens_blouse
+  brand: ThreadCraft
+  colors:
+  - Ivory
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 69.99
+  currency: USD
+  material: 100% Silk
+  description: Ivory silk blouse with delicate button front.
+  image_file: womens_blouse_1_silk_ivory.png
+  rating: 4.7
+  reviews_count: 198
+- product_id: PROD-024
+  name: Navy Floral Chiffon Blouse
+  category: womens_blouse
+  brand: ThreadCraft
+  colors:
+  - Navy
+  - Floral
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 54.99
+  currency: USD
+  material: Chiffon
+  description: Navy blue floral print chiffon blouse.
+  image_file: womens_blouse_2_floral.png
+  rating: 4.5
+  reviews_count: 234
+- product_id: PROD-027
+  name: Pastel Pink Oversized Hoodie
+  category: womens_hoodie
+  brand: ActivePulse
+  colors:
+  - Pastel Pink
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 49.99
+  currency: USD
+  material: Cotton Fleece
+  description: Pastel pink oversized pullover hoodie.
+  image_file: womens_hoodie_1_pastel_pink.png
+  rating: 4.6
+  reviews_count: 312
+- product_id: PROD-028
+  name: Purple Tie-Dye Hoodie
+  category: womens_hoodie
+  brand: ActivePulse
+  colors:
+  - Purple
+  - Blue
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 54.99
+  currency: USD
+  material: Cotton Blend
+  description: Purple and blue tie-dye hoodie.
+  image_file: womens_hoodie_2_tie_dye.png
+  rating: 4.3
+  reviews_count: 198
+- product_id: PROD-030
+  name: Olive Button-Front Cardigan
+  category: womens_cardigan
+  brand: NorthTrail
+  colors:
+  - Olive
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 54.99
+  currency: USD
+  material: Cotton Knit
+  description: Olive green long button-front cardigan.
+  image_file: womens_cardigan_2_olive.png
+  rating: 4.5
+  reviews_count: 176
+- product_id: PROD-031
+  name: Floral Midi Wrap Dress
+  category: womens_dress
+  brand: ThreadCraft
+  colors:
+  - Pink
+  - Floral
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 79.99
+  currency: USD
+  material: Viscose
+  description: Floral print midi wrap dress in soft pink tones.
+  image_file: womens_dress_1_floral_midi.png
+  rating: 4.8
+  reviews_count: 445
+- product_id: PROD-032
+  name: Black Sleeveless Cocktail Dress
+  category: womens_dress
+  brand: ThreadCraft
+  colors:
+  - Black
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 99.99
+  currency: USD
+  material: Polyester Blend
+  description: Elegant black sleeveless cocktail dress.
+  image_file: womens_dress_2_black_cocktail.png
+  rating: 4.7
+  reviews_count: 312
+- product_id: PROD-033
+  name: High-Waist Light Blue Jeans
+  category: womens_jeans
+  brand: UrbanBasics
+  colors:
+  - Light Blue
+  sizes:
+  - '25'
+  - '26'
+  - '28'
+  - '30'
+  price: 59.99
+  currency: USD
+  material: 99% Cotton, 1% Elastane
+  description: High-waist straight-leg light blue jeans.
+  image_file: womens_jeans_1_highwaist_blue.png
+  rating: 4.6
+  reviews_count: 523
+- product_id: PROD-034
+  name: Black Skinny Jeans
+  category: womens_jeans
+  brand: UrbanBasics
+  colors:
+  - Black
+  sizes:
+  - '25'
+  - '26'
+  - '28'
+  - '30'
+  price: 54.99
+  currency: USD
+  material: 98% Cotton, 2% Elastane
+  description: Black skinny jeans with stretch.
+  image_file: womens_jeans_2_skinny_black.png
+  rating: 4.5
+  reviews_count: 467
+- product_id: PROD-035
+  name: Navy Pleated Midi Skirt
+  category: womens_skirt
+  brand: ThreadCraft
+  colors:
+  - Navy
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 49.99
+  currency: USD
+  material: Polyester Blend
+  description: Navy blue pleated midi skirt.
+  image_file: womens_skirt_1_pleated_navy.png
+  rating: 4.5
+  reviews_count: 234
+- product_id: PROD-036
+  name: Denim Mini Skirt
+  category: womens_skirt
+  brand: UrbanBasics
+  colors:
+  - Light Blue
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 39.99
+  currency: USD
+  material: 100% Denim
+  description: Light blue denim mini skirt with front buttons.
+  image_file: womens_skirt_2_denim_mini.png
+  rating: 4.4
+  reviews_count: 312
+- product_id: PROD-037
+  name: Denim High-Waist Shorts
+  category: womens_shorts
+  brand: UrbanBasics
+  colors:
+  - Light Blue
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 34.99
+  currency: USD
+  material: 100% Denim
+  description: Light blue high-waist denim shorts.
+  image_file: womens_shorts_1_denim.png
+  rating: 4.4
+  reviews_count: 289
+- product_id: PROD-038
+  name: White Linen Shorts
+  category: womens_shorts
+  brand: ThreadCraft
+  colors:
+  - White
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 39.99
+  currency: USD
+  material: 100% Linen
+  description: White linen relaxed-fit shorts.
+  image_file: womens_shorts_2_linen_white.png
+  rating: 4.5
+  reviews_count: 198
+- product_id: PROD-039
+  name: Black High-Waist Yoga Leggings
+  category: womens_leggings
+  brand: ActivePulse
+  colors:
+  - Black
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 44.99
+  currency: USD
+  material: 80% Nylon, 20% Spandex
+  description: Black high-waist yoga leggings with four-way stretch.
+  image_file: womens_leggings_1_black.png
+  rating: 4.7
+  reviews_count: 567
+- product_id: PROD-040
+  name: Navy Mesh Panel Leggings
+  category: womens_leggings
+  brand: ActivePulse
+  colors:
+  - Navy
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 49.99
+  currency: USD
+  material: Nylon Spandex
+  description: Navy blue leggings with mesh side panels.
+  image_file: womens_leggings_2_navy_mesh.png
+  rating: 4.5
+  reviews_count: 345
+- product_id: PROD-041
+  name: White Classic Low-Top Sneakers
+  category: sneakers
+  brand: ActivePulse
+  colors:
+  - White
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 69.99
+  currency: USD
+  material: Leather Upper, Rubber Sole
+  description: White leather low-top sneakers.
+  image_file: sneakers_1_white_classic.png
+  rating: 4.6
+  reviews_count: 445
+- product_id: PROD-042
+  name: Black & Red High-Top Sneakers
+  category: sneakers
+  brand: ActivePulse
+  colors:
+  - Black
+  - Red
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 79.99
+  currency: USD
+  material: Synthetic Upper, Rubber Sole
+  description: Black and red high-top sneakers.
+  image_file: sneakers_2_black_red.png
+  rating: 4.5
+  reviews_count: 312
+- product_id: PROD-043
+  name: Blue Mesh Running Shoes
+  category: running_shoes
+  brand: ActivePulse
+  colors:
+  - Blue
+  - White
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 89.99
+  currency: USD
+  material: Mesh Upper, EVA Sole
+  description: Blue and white running shoes with breathable mesh.
+  image_file: running_shoes_1_blue.png
+  rating: 4.7
+  reviews_count: 523
+- product_id: PROD-044
+  name: Neon Green Running Shoes
+  category: running_shoes
+  brand: ActivePulse
+  colors:
+  - Neon Green
+  - Black
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 94.99
+  currency: USD
+  material: Mesh Upper, Foam Sole
+  description: Neon green and black running shoes.
+  image_file: running_shoes_2_neon.png
+  rating: 4.6
+  reviews_count: 389
+- product_id: PROD-053
+  name: Oversized Graphic Tee
+  category: mens_tshirt
+  brand: UrbanBasics
+  colors:
+  - White
+  - Print
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 29.99
+  currency: USD
+  material: 100% Cotton
+  description: Oversized graphic print t-shirt with relaxed fit.
+  image_url: https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=500&fit=crop
+  rating: 4.4
+  reviews_count: 267
+- product_id: PROD-054
+  name: Performance Running Shorts
+  category: mens_shorts
+  brand: ActivePulse
+  colors:
+  - Black
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 34.99
+  currency: USD
+  material: Polyester Mesh
+  description: Lightweight performance running shorts with inner brief.
+  image_url: https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=500&fit=crop
+  rating: 4.5
+  reviews_count: 312
+- product_id: PROD-056
+  name: Linen Button-Down Shirt
+  category: mens_shirt
+  brand: ThreadCraft
+  colors:
+  - White
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 54.99
+  currency: USD
+  material: 100% Linen
+  description: Classic white linen button-down shirt for summer.
+  image_url: https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop
+  rating: 4.6
+  reviews_count: 345
+- product_id: PROD-058
+  name: Red Athletic Running Shoes
+  category: running_shoes
+  brand: ActivePulse
+  colors:
+  - Red
+  - White
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 99.99
+  currency: USD
+  material: Mesh Upper, Foam Sole
+  description: Bold red athletic running shoes with cushioned sole.
+  image_url: https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=500&fit=crop
+  rating: 4.7
+  reviews_count: 534
+- product_id: PROD-059
+  name: Leather Ankle Boots
+  category: boots
+  brand: NorthTrail
+  colors:
+  - Tan
+  sizes:
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  - '11'
+  price: 114.99
+  currency: USD
+  material: Genuine Leather
+  description: Tan leather ankle boots with lace-up front.
+  image_url: https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=500&fit=crop
+  rating: 4.6
+  reviews_count: 287
+- product_id: PROD-060
+  name: Strappy Summer Sandals
+  category: sandals
+  brand: ThreadCraft
+  colors:
+  - Tan
+  sizes:
+  - '6'
+  - '7'
+  - '8'
+  - '9'
+  - '10'
+  price: 49.99
+  currency: USD
+  material: Leather Straps, Cork Sole
+  description: Tan strappy sandals perfect for summer.
+  image_url: https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=500&fit=crop
+  rating: 4.4
+  reviews_count: 198
+- product_id: PROD-061
+  name: Black Collared Shirt Dress
+  category: womens_dress
+  brand: Leriya Fashion
+  colors:
+  - Black
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 49.99
+  currency: USD
+  material: Rayon
+  description: Knee-length collared shirt dress with 3/4 roll-tab sleeves and button-down
+    front. Perfect for casual outings and vacations.
+  image_file: womens_dress_3_black_shirt.png
+  rating: 4.3
+  reviews_count: 5740
+- product_id: PROD-062
+  name: Blue Cotton Midi Dress
+  category: womens_dress
+  brand: Staud
+  colors:
+  - Blue
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 295.0
+  currency: USD
+  material: Cotton
+  description: Wells cotton midi dress in blue. Clean silhouette with a relaxed fit,
+    perfect for daytime events.
+  image_file: womens_dress_4_blue_cotton_midi.png
+  rating: 4.6
+  reviews_count: 128
+- product_id: PROD-066
+  name: Pink Floral Summer Dress
+  category: womens_dress
+  brand: ThreadCraft
+  colors:
+  - Pink
+  - Floral
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 69.99
+  currency: USD
+  material: Chiffon
+  description: Light and breezy pink floral dress, perfect for summer days and garden
+    parties.
+  image_file: womens_dress_8_pink_floral.png
+  rating: 4.5
+  reviews_count: 312
+- product_id: PROD-068
+  name: Retro Vintage Cocktail Swing Dress
+  category: womens_dress
+  brand: ThreadCraft
+  colors:
+  - Black
+  - Red
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 79.99
+  currency: USD
+  material: Cotton Blend
+  description: 1950s-inspired cap sleeve cocktail swing dress. Retro vintage style
+    with a flattering A-line silhouette.
+  image_file: womens_dress_10_retro_cocktail.png
+  rating: 4.6
+  reviews_count: 234
+- product_id: PROD-069
+  name: Collared Button-Down Dress
+  category: womens_dress
+  brand: Leriya Fashion
+  colors:
+  - Beige
+  - Green
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 44.99
+  currency: USD
+  material: Rayon
+  description: Casual collared button-down dress with a relaxed fit. Versatile for
+    work or weekend wear.
+  image_file: womens_dress_11_collared_button.png
+  rating: 4.2
+  reviews_count: 3200
+- product_id: PROD-070
+  name: Stylish Evening Gown Dress
+  category: womens_dress
+  brand: Leriya Fashion
+  colors:
+  - Black
+  - Navy
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 89.99
+  currency: USD
+  material: Polyester
+  description: Elegant evening gown dress with a flattering drape. Perfect for parties
+    and formal events.
+  image_file: womens_dress_12_evening_gown.png
+  rating: 4.5
+  reviews_count: 1890
+- product_id: PROD-073
+  name: Melange Grey Joggers
+  category: mens_joggers
+  brand: Alan Jones
+  colors:
+  - Grey Melange
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 29.99
+  currency: USD
+  material: Cotton Blend
+  description: Comfortable melange grey joggers with elastic waistband and cuffed
+    ankles. Perfect for casual wear.
+  image_file: mens_joggers_4_melange_grey.png
+  rating: 4.2
+  reviews_count: 1890
+- product_id: PROD-075
+  name: Casual Cargo Pants
+  category: mens_chinos
+  brand: T.U.N
+  colors:
+  - Multi
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 22.99
+  currency: USD
+  material: Cotton
+  description: Casual cargo pants with utility pockets. Comfortable cotton blend for
+    everyday wear.
+  image_file: mens_chinos_3_cargo.png
+  rating: 4.1
+  reviews_count: 234
+- product_id: PROD-076
+  name: Striped Polo Neck T-Shirt
+  category: mens_polo
+  brand: AOOSH
+  colors:
+  - Blue
+  - White
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 27.99
+  currency: USD
+  material: Cotton Blend
+  description: Colorblock striped polo neck t-shirt with full sleeves. Classic polo
+    styling with modern colorblock design.
+  image_file: mens_polo_4_striped_blue.png
+  rating: 4.3
+  reviews_count: 678
+- product_id: PROD-077
+  name: Texture Design T-Shirt
+  category: mens_tshirt
+  brand: AUSK
+  colors:
+  - Grey
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 27.99
+  currency: USD
+  material: Cotton Blend
+  description: T-shirt with textured fabric design. Subtle pattern adds visual interest
+    to a classic silhouette.
+  image_file: mens_tshirt_7_texture_design.png
+  rating: 4.2
+  reviews_count: 543
+- product_id: PROD-079
+  name: Premium Striped Polo T-Shirt
+  category: mens_polo
+  brand: Warrior World
+  colors:
+  - Black
+  - Navy Blue
+  - Green
+  - White
+  - Maroon
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 34.99
+  currency: USD
+  material: 100% Cotton, 270 GSM
+  description: Premium polo t-shirt with striped design and contrast collar trim.
+    Classic fit with side slits for comfort.
+  image_file: mens_polo_3_striped_premium.png
+  rating: 4.5
+  reviews_count: 890
+- product_id: PROD-080
+  name: Blue Wash Skinny Jeans
+  category: womens_jeans
+  brand: T.U.N
+  colors:
+  - Blue
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 24.99
+  currency: USD
+  material: Denim
+  description: Blue wash skinny jeans with a slim fit. Comfortable stretch denim for
+    everyday wear.
+  image_file: womens_jeans_6_blue_wash.png
+  rating: 4.2
+  reviews_count: 345
+  gender: women
+- product_id: PROD-082
+  name: Flag Printed Hoodie
+  category: mens_hoodie
+  brand: ADRO
+  colors:
+  - Black
+  - Grey
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 34.99
+  currency: USD
+  material: Cotton Blend Fleece
+  description: Printed hoodie sweatshirt with flag graphic design. Warm fleece lining
+    with kangaroo pocket.
+  image_file: mens_hoodie_3_flag_printed.png
+  rating: 4.2
+  reviews_count: 890
+- product_id: PROD-083
+  name: Graphic Print Unisex Hoodie
+  category: mens_hoodie
+  brand: Lymio
+  colors:
+  - Black
+  - White
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 29.99
+  currency: USD
+  material: Cotton Blend
+  description: Unisex graphic print hoodie sweatshirt. Comfortable fit with ribbed
+    cuffs and hem.
+  image_file: mens_hoodie_4_unisex_graphic.png
+  rating: 4.1
+  reviews_count: 1200
+- product_id: PROD-087
+  name: Wide High-Waist Blue Jeans
+  category: womens_jeans
+  brand: H&M
+  colors:
+  - Blue
+  sizes:
+  - '25'
+  - '26'
+  - '28'
+  - '30'
+  - '32'
+  price: 39.99
+  currency: USD
+  material: Denim
+  description: Wide-leg high-waist jeans in classic blue denim. Relaxed fit with a
+    modern silhouette.
+  image_file: womens_jeans_4_wide_high_waist.png
+  rating: 4.5
+  reviews_count: 678
+- product_id: PROD-088
+  name: Blue Heavy Wash Denim Jeans
+  category: womens_jeans
+  brand: Ruff
+  colors:
+  - Blue
+  sizes:
+  - '25'
+  - '26'
+  - '28'
+  - '30'
+  - '32'
+  price: 44.99
+  currency: USD
+  material: Heavy Wash Denim
+  description: Blue heavy wash denim jeans with a classic straight fit. Durable and
+    comfortable.
+  image_file: womens_jeans_5_blue_denim.png
+  rating: 4.3
+  reviews_count: 234
+- product_id: PROD-089
+  name: Microlight Alpine Down Jacket
+  category: womens_cardigan
+  brand: Rab
+  colors:
+  - Army
+  - Black
+  - Steel
+  - Watermelon
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 199.99
+  currency: USD
+  material: Recycled Pertex Quantum Nylon, 700FP Down
+  description: Lightweight down jacket with recycled fabric and hydrophobic goose
+    down. Windproof, breathable, and highly packable.
+  image_file: womens_cardigan_3_down_jacket.png
+  rating: 4.9
+  reviews_count: 156
+- product_id: PROD-091
+  name: Black Leather Biker Jacket
+  category: mens_jacket
+  brand: StreetVibe
+  colors:
+  - Black
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 149.99
+  currency: USD
+  material: Genuine Leather
+  description: Classic black leather biker jacket with quilted shoulders and asymmetric
+    zip closure.
+  image_file: mens_jacket_black_leather.png
+  rating: 4.7
+  reviews_count: 312
+- product_id: PROD-092
+  name: Black Slim-Fit Blazer
+  category: mens_jacket
+  brand: ThreadCraft
+  colors:
+  - Black
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 89.99
+  currency: USD
+  material: Polyester Blend
+  description: Slim-fit single-button black blazer with pocket square detail. Perfect
+    for formal occasions.
+  image_file: mens_jacket_black_blazer.png
+  rating: 4.5
+  reviews_count: 456
+- product_id: PROD-093
+  name: Navy Slim-Fit Blazer
+  category: mens_jacket
+  brand: ThreadCraft
+  colors:
+  - Navy
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  price: 89.99
+  currency: USD
+  material: Polyester Blend
+  description: Two-button navy blazer with a modern slim fit. Versatile for business
+    and smart casual.
+  image_file: mens_jacket_navy_blazer.png
+  rating: 4.6
+  reviews_count: 389
+- product_id: PROD-095
+  name: Olive Puffer Jacket
+  category: mens_jacket
+  brand: ActivePulse
+  colors:
+  - Olive
+  sizes:
+  - S
+  - M
+  - L
+  - XL
+  - XXL
+  price: 69.99
+  currency: USD
+  material: Nylon, Down Fill
+  description: Lightweight quilted puffer jacket in olive green. Warm and packable
+    for travel.
+  image_file: mens_jacket_olive_puffer.png
+  rating: 4.3
+  reviews_count: 567
+- product_id: PROD-098
+  name: Brown Zip-Up Hoodie
+  category: womens_hoodie
+  brand: UrbanBasics
+  colors:
+  - Brown
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 44.99
+  currency: USD
+  material: Cotton Fleece
+  description: Oversized brown zip-up hoodie with kangaroo pockets. Warm and cozy
+    for everyday wear.
+  image_file: womens_hoodie_brown_zip.png
+  rating: 4.4
+  reviews_count: 678
+- product_id: PROD-099
+  name: Grey Cropped Zip Hoodie
+  category: womens_hoodie
+  brand: UrbanBasics
+  colors:
+  - Grey
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 39.99
+  currency: USD
+  material: Cotton Blend
+  description: Cropped zip-up hoodie in heather grey. Trendy streetwear style with
+    drawstring hood.
+  image_file: womens_hoodie_grey_crop.png
+  rating: 4.3
+  reviews_count: 456
+- product_id: PROD-100
+  name: Brown Peplum Zip Jacket
+  category: womens_cardigan
+  brand: ThreadCraft
+  colors:
+  - Brown
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 59.99
+  currency: USD
+  material: Polyester Blend
+  description: Fitted peplum jacket with ring-pull zipper. Elegant silhouette for
+    smart casual looks.
+  image_file: womens_cardigan_brown_peplum.png
+  rating: 4.5
+  reviews_count: 189
+- product_id: PROD-101
+  name: Taupe Open-Front Blazer
+  category: womens_cardigan
+  brand: ThreadCraft
+  colors:
+  - Taupe
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 49.99
+  currency: USD
+  material: Polyester Blend
+  description: Lightweight open-front blazer in taupe. Draped lapels for a relaxed
+    professional look.
+  image_file: womens_cardigan_taupe_open.png
+  rating: 4.3
+  reviews_count: 312
+- product_id: PROD-102
+  name: Black Bow-Tie A-Line Skirt
+  category: womens_skirt
+  brand: ThreadCraft
+  colors:
+  - Black
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 39.99
+  currency: USD
+  material: Cotton Blend
+  description: High-waist A-line skirt with decorative bow tie. Classic and versatile
+    midi length.
+  image_file: womens_skirt_black_bow.png
+  rating: 4.6
+  reviews_count: 890
+- product_id: PROD-104
+  name: Navy Bow-Tie A-Line Skirt
+  category: womens_skirt
+  brand: ThreadCraft
+  colors:
+  - Navy
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 39.99
+  currency: USD
+  material: Cotton Blend
+  description: High-waist A-line skirt in navy with bow tie detail. Elegant midi length
+    for any occasion.
+  image_file: womens_skirt_navy_bow.png
+  rating: 4.5
+  reviews_count: 567
+- product_id: PROD-105
+  name: Beige Chiffon Maxi Skirt
+  category: womens_skirt
+  brand: ThreadCraft
+  colors:
+  - Beige
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 54.99
+  currency: USD
+  material: Chiffon
+  description: Flowing beige chiffon maxi skirt with elastic waistband. Light and
+    elegant for summer.
+  image_file: womens_skirt_beige_maxi.png
+  rating: 4.7
+  reviews_count: 234
+- product_id: PROD-106
+  name: Floral Tiered Midi Skirt
+  category: womens_skirt
+  brand: ThreadCraft
+  colors:
+  - Multi
+  sizes:
+  - XS
+  - S
+  - M
+  - L
+  price: 49.99
+  currency: USD
+  material: Cotton
+  description: Colorful floral print tiered midi skirt with elastic waist. Vibrant
+    botanical pattern.
+  image_file: womens_skirt_floral_tiered.png
+  rating: 4.6
+  reviews_count: 456
+- product_id: PROD-107
+  name: Dark Casual Trousers
+  category: mens_chinos
+  brand: TAGDO
+  colors:
+  - Dark Grey
+  sizes:
+  - '28'
+  - '30'
+  - '32'
+  - '34'
+  - '36'
+  price: 34.99
+  currency: USD
+  material: Cotton Blend
+  description: Regular fit dark casual trousers. Comfortable everyday pants with a
+    clean look.
+  image_file: mens_chinos_dark_casual.png
+  rating: 4.2
+  reviews_count: 456

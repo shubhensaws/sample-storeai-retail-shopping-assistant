@@ -1,0 +1,4 @@
+# Vendored into _vendor/ at build time (see infra/terraform/modules/lambdas).
+# The Lambda python3.12 runtime's bundled boto3 predates the s3vectors client,
+# so a recent boto3 must be packaged with the function.
+boto3>=1.40.0

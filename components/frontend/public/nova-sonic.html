@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; }
+  .container { padding: 12px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+
+  #talkBtn {
+    width: 72px; height: 72px; border-radius: 50%; border: 3px solid #ccc;
+    font-size: 32px; cursor: pointer; background: #f8f9fa; transition: all 0.3s;
+    outline: none; display: flex; align-items: center; justify-content: center;
+  }
+  #talkBtn:hover { background: #e9ecef; border-color: #adb5bd; }
+  #talkBtn.active { background: #e63946; color: white; border-color: #e63946; animation: pulse 1.5s infinite; }
+  #talkBtn.connecting { background: #ffc107; color: #333; border-color: #ffc107; animation: pulse 1s infinite; }
+  #talkBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230,57,70,0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(230,57,70,0); }
+  }
+
+  .info { flex: 1; }
+  #status { font-size: 14px; color: #495057; font-weight: 500; }
+  #subtitle { font-size: 12px; color: #868e96; margin-top: 2px; }
+
+  .transcript-area {
+    background: #f8f9fa; border-radius: 10px; padding: 12px;
+    max-height: 500px; overflow-y: auto; font-size: 13px; line-height: 1.5;
+  }
+  .transcript-area .user { color: #1971c2; }
+  .transcript-area .assistant { color: #2f9e44; }
+  .transcript-area .tool { color: #e8590c; font-style: italic; font-size: 12px; }
+  .transcript-area .entry { margin-bottom: 6px; }
+
+  .voice-select { margin-bottom: 10px; }
+  .voice-select select {
+    padding: 4px 8px; border-radius: 6px; border: 1px solid #dee2e6;
+    font-size: 13px; background: white;
+  }
+
+  .product-cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px; margin: 10px 0; padding: 8px 0;
+  }
+  .product-card {
+    border-radius: 10px; overflow: hidden;
+    background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+  }
+  .product-card:hover { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+  .product-card img {
+    width: 100%; height: 160px; object-fit: cover; display: block;
+  }
+  .product-card .card-body {
+    padding: 8px; font-size: 12px;
+  }
+  .product-card .card-body .pname {
+    font-weight: 600; color: #212529; margin-bottom: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .product-card .card-body .pbrand {
+    color: #868e96; font-size: 11px; margin-bottom: 3px;
+  }
+  .product-card .card-body .pprice {
+    color: #e63946; font-weight: 700; font-size: 13px;
+  }
+
+  .tryon-panel {
+    margin: 12px 0; padding: 16px; border-radius: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+  }
+  .tryon-panel h4 { margin: 0 0 14px 0; font-size: 15px; text-align: center; }
+  .tryon-panel .tryon-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  }
+  .tryon-panel .tryon-col {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .tryon-panel .tryon-col-label {
+    font-size: 12px; color: #495057; font-weight: 600; margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .tryon-panel img { border-radius: 8px; object-fit: cover; }
+  .tryon-panel .upload-area {
+    width: 100%; padding: 20px 12px; border: 2px dashed #adb5bd;
+    border-radius: 10px; text-align: center; cursor: pointer; background: white;
+    transition: border-color 0.2s;
+  }
+  .tryon-panel .upload-area:hover { border-color: #e63946; }
+  .tryon-panel .upload-area input { display: none; }
+  .tryon-panel button {
+    margin-top: 10px; padding: 10px 24px; border-radius: 8px; border: none;
+    background: #e63946; color: white; font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: background 0.2s;
+  }
+  .tryon-panel button:hover { background: #c1121f; }
+  .tryon-panel button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tryon-panel .result-area {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 180px; background: white; border-radius: 10px; padding: 12px;
+    border: 1px solid #e9ecef;
+  }
+  .tryon-panel .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #dee2e6; border-top-color: #e63946; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="voice-select">
+    <label for="langSelect">Language: </label>
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="hi">Hindi (हिंदी)</option>
+    </select>
+    &nbsp;&nbsp;
+    <label for="voiceId">Voice: </label>
+    <select id="voiceId">
+      <option value="matthew">Matthew (Male)</option>
+      <option value="tiffany">Tiffany (Female)</option>
+    </select>
+  </div>
+
+  <div class="controls">
+    <button id="talkBtn">🎤</button>
+    <div class="info">
+      <div id="status">Click to start voice conversation</div>
+      <div id="subtitle">Uses Amazon Nova Sonic speech-to-speech</div>
+    </div>
+  </div>
+
+  <div class="transcript-area" id="transcriptArea"></div>
+</div>
+
+<script>
+// --- Streamlit Component Communication ---
+function sendToStreamlit(data) {
+  window.parent.postMessage({ type: "streamlit:setComponentValue", value: data }, "*");
+}
+function setFrameHeight(h) {
+  window.parent.postMessage({ type: "streamlit:setFrameHeight", height: h }, "*");
+}
+window.parent.postMessage({ type: "streamlit:componentReady", apiVersion: 1 }, "*");
+window.addEventListener("message", function(e) {
+  if (e.data.type === "streamlit:render") {
+    // Read wsUrl from args if provided
+    if (e.data.args && e.data.args.ws_url) {
+      window._wsUrl = e.data.args.ws_url;
+    }
+    setFrameHeight(document.body.scrollHeight);
+  }
+});
+setTimeout(() => setFrameHeight(document.body.scrollHeight), 200);
+
+// --- State ---
+let ws = null;
+let audioContext = null;
+let mediaStream = null;
+let scriptProcessor = null;
+let isActive = false;
+
+const btn = document.getElementById('talkBtn');
+const statusEl = document.getElementById('status');
+const subtitleEl = document.getElementById('subtitle');
+const transcriptArea = document.getElementById('transcriptArea');
+const voiceSelect = document.getElementById('voiceId');
+
+// --- Audio Playback ---
+let playbackCtx = null;
+let playbackQueue = [];
+let isPlaying = false;
+
+function initPlayback() {
+  if (!playbackCtx) {
+    playbackCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+  }
+}
+
+function queueAudioChunk(b64Data) {
+  const raw = atob(b64Data);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+
+  // Convert Int16 PCM to Float32
+  const int16 = new Int16Array(bytes.buffer);
+  const float32 = new Float32Array(int16.length);
+  for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768.0;
+
+  playbackQueue.push(float32);
+  if (!isPlaying) playNextChunk();
+}
+
+function playNextChunk() {
+  if (playbackQueue.length === 0) { isPlaying = false; return; }
+  isPlaying = true;
+  initPlayback();
+
+  const samples = playbackQueue.shift();
+  const buffer = playbackCtx.createBuffer(1, samples.length, 24000);
+  buffer.getChannelData(0).set(samples);
+
+  const source = playbackCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(playbackCtx.destination);
+  source.onended = playNextChunk;
+  source.start();
+}
+
+// --- Transcript ---
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function addTranscript(role, text) {
+  const div = document.createElement('div');
+  div.className = 'entry ' + role;
+  const label = role === 'user' ? '🗣️ You' : role === 'tool' ? '🔧 Tool' : '🤖 Assistant';
+  div.innerHTML = `<strong>${label}:</strong> ${esc(text)}`;
+  transcriptArea.appendChild(div);
+  transcriptArea.scrollTop = transcriptArea.scrollHeight;
+  setFrameHeight(document.body.scrollHeight);
+}
+
+// --- Product Images — server sends product_id, we load via proxy on same server ---
+function getImageProxyUrl(productId) {
+  // Derive the HTTP base URL from the WebSocket URL
+  var base = window._wsUrl || ('ws://localhost:8505/ws/nova-sonic');
+  base = base.replace('ws://', 'http://').replace('wss://', 'https://');
+  base = base.replace('/ws/nova-sonic', '');
+  // Remove quotes if injected by Streamlit
+  base = base.replace(/^'|'$/g, '');
+  if (!base || base === 'http://' || base === 'https://') base = 'http://localhost:8505';
+  return base + '/img/' + encodeURIComponent(productId);
+}
+
+// Shared product card container — reuse across a batch of results
+var _currentProductGrid = null;
+var _productGridTimeout = null;
+
+function renderProductCard(product) {
+  // If no active grid or the last card was added > 500ms ago, create a new grid
+  if (!_currentProductGrid || !transcriptArea.contains(_currentProductGrid)) {
+    _currentProductGrid = document.createElement('div');
+    _currentProductGrid.className = 'product-cards';
+    transcriptArea.appendChild(_currentProductGrid);
+  }
+  clearTimeout(_productGridTimeout);
+
+  var card = document.createElement('div');
+  card.className = 'product-card';
+  var imgUrl = getImageProxyUrl(product.product_id);
+  card.innerHTML =
+    '<img src="' + imgUrl + '" alt="' + esc(product.name) + '" loading="lazy" onerror="this.style.display=\'none\'" />' +
+    '<div class="card-body">' +
+      '<div class="pname" title="' + esc(product.name) + '">' + esc(product.name) + '</div>' +
+      '<div class="pbrand">' + esc(product.brand) + '</div>' +
+      '<div class="pprice">$' + parseFloat(product.price).toFixed(2) + '</div>' +
+    '</div>';
+  _currentProductGrid.appendChild(card);
+  transcriptArea.scrollTop = transcriptArea.scrollHeight;
+  setFrameHeight(document.body.scrollHeight);
+
+  // Reset the grid reference after a pause so the next batch gets a new container
+  _productGridTimeout = setTimeout(function() { _currentProductGrid = null; }, 1000);
+}
+
+// --- Virtual Try-On Panel ---
+function renderTryOnPanel(data) {
+  // Remove any existing try-on panel
+  var old = document.getElementById('tryonPanel');
+  if (old) old.remove();
+
+  var panel = document.createElement('div');
+  panel.id = 'tryonPanel';
+  panel.className = 'tryon-panel';
+
+  var imgUrl = getImageProxyUrl(data.product_id);
+
+  panel.innerHTML =
+    '<h4>👗 Virtual Try-On: ' + esc(data.product_name) + '</h4>' +
+    '<div class="tryon-row">' +
+      '<div class="tryon-col">' +
+        '<div class="tryon-col-label">Product</div>' +
+        '<img src="' + imgUrl + '" width="160" height="200" />' +
+      '</div>' +
+      '<div class="tryon-col">' +
+        '<div class="tryon-col-label">Your Photo</div>' +
+        '<div class="upload-area" id="tryonUploadArea">' +
+          '<input type="file" id="tryonFileInput" accept="image/jpeg,image/png" />' +
+          '<div id="tryonUploadLabel">📷 Click to upload</div>' +
+          '<img id="tryonPreview" style="display:none;max-width:160px;max-height:200px;margin-top:8px;border-radius:8px;" />' +
+        '</div>' +
+        '<button id="tryonRunBtn" disabled>✨ Try it on!</button>' +
+      '</div>' +
+      '<div class="tryon-col">' +
+        '<div class="tryon-col-label">Result</div>' +
+        '<div class="result-area" id="tryonResultArea">' +
+          '<p style="font-size:12px;color:#868e96;">Will appear here</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  transcriptArea.appendChild(panel);
+  transcriptArea.scrollTop = transcriptArea.scrollHeight;
+  setFrameHeight(document.body.scrollHeight);
+
+  // Wire up file upload
+  var uploadArea = document.getElementById('tryonUploadArea');
+  var fileInput = document.getElementById('tryonFileInput');
+  var preview = document.getElementById('tryonPreview');
+  var runBtn = document.getElementById('tryonRunBtn');
+  var resultArea = document.getElementById('tryonResultArea');
+  var uploadLabel = document.getElementById('tryonUploadLabel');
+  var userPhotoB64 = null;
+
+  uploadArea.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function() {
+    var file = fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      uploadLabel.textContent = file.name;
+      userPhotoB64 = e.target.result.split(',')[1]; // strip data:image/...;base64,
+      runBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  runBtn.addEventListener('click', function() {
+    if (!userPhotoB64) return;
+    runBtn.disabled = true;
+    runBtn.textContent = 'Processing...';
+    resultArea.innerHTML = '<div class="spinner"></div><p style="font-size:12px;color:#666;margin-top:8px;">Generating... (10-20s)</p>';
+
+    // Call the server-side try-on endpoint
+    var base = (window._wsUrl || ('ws://localhost:8505/ws/nova-sonic'))
+      .replace('ws://', 'http://').replace('wss://', 'https://').replace('/ws/nova-sonic', '').replace(/^'|'$/g, '');
+    if (!base || base === 'http://' || base === 'https://') base = 'http://localhost:8505';
+
+    fetch(base + '/api/virtual-tryon', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        product_id: data.product_id,
+        user_photo_b64: userPhotoB64,
+        garment_class: data.garment_class
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success && resp.result_image_b64) {
+        var _b64 = String(resp.result_image_b64).replace(/[^A-Za-z0-9+/=]/g, '');
+        resultArea.innerHTML = '<img src="data:image/png;base64,' + _b64 + '" style="max-width:300px;border-radius:10px;" /><p style="font-size:12px;color:#2f9e44;margin-top:6px;">✅ Try-on complete!</p>';
+        addTranscript('tool', '✅ Virtual try-on result ready!');
+      } else {
+        resultArea.innerHTML = '<p style="color:#e63946;">❌ ' + esc(resp.error || 'Try-on failed') + '</p>';
+      }
+      runBtn.textContent = '✨ Try it on!';
+      runBtn.disabled = false;
+    })
+    .catch(function(err) {
+      resultArea.innerHTML = '<p style="color:#e63946;">❌ Error: ' + esc(err.message) + '</p>';
+      runBtn.textContent = '✨ Try it on!';
+      runBtn.disabled = false;
+    });
+  });
+}
+
+// --- WebSocket + Audio Capture ---
+async function startConversation() {
+  btn.className = 'connecting';
+  statusEl.textContent = 'Connecting to Nova Sonic...';
+
+  try {
+    // Get mic access
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true }
+    });
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const source = audioContext.createMediaStreamSource(mediaStream);
+
+    // ScriptProcessor to capture PCM chunks (4096 frames)
+    scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+    source.connect(scriptProcessor);
+    scriptProcessor.connect(audioContext.destination);
+
+    // Connect WebSocket
+    const wsUrl = window._wsUrl || `ws://localhost:8505/ws/nova-sonic`;
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      // Send config with voice, language, and persistent session ID
+      var langSelect = document.getElementById('langSelect');
+      var lang = langSelect.value || 'en';
+      // Use a persistent session ID so signed-in state survives page navigations
+      if (!sessionStorage.getItem('nova_sonic_session_id')) {
+        sessionStorage.setItem('nova_sonic_session_id', 'ns-' + Math.random().toString(36).substr(2, 12));
+      }
+      var sessionId = sessionStorage.getItem('nova_sonic_session_id');
+      ws.send(JSON.stringify({ voice_id: voiceSelect.value, language: lang, session_id: sessionId }));
+      isActive = true;
+      btn.className = 'active';
+      statusEl.textContent = '🔴 Listening... speak naturally';
+      subtitleEl.textContent = 'Nova Sonic is processing your speech in real-time';
+
+      // Start sending audio
+      scriptProcessor.onaudioprocess = (e) => {
+        if (!isActive || ws.readyState !== WebSocket.OPEN) return;
+        const float32 = e.inputBuffer.getChannelData(0);
+        // Convert Float32 to Int16 PCM
+        const int16 = new Int16Array(float32.length);
+        for (let i = 0; i < float32.length; i++) {
+          const s = Math.max(-1, Math.min(1, float32[i]));
+          int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        // Send as base64
+        const bytes = new Uint8Array(int16.buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const b64 = btoa(binary);
+        ws.send(JSON.stringify({ type: 'audio', data: b64 }));
+      };
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'audio') {
+        queueAudioChunk(msg.data);
+      } else if (msg.type === 'transcript') {
+        const role = msg.role === 'USER' ? 'user' : 'assistant';
+        addTranscript(role, msg.text);
+        // Notify Streamlit of transcript updates
+        sendToStreamlit({ event: 'transcript', role: role, text: msg.text });
+      } else if (msg.type === 'tool_call') {
+        addTranscript('tool', `Calling ${msg.tool}...`);
+      } else if (msg.type === 'product_card') {
+        console.log('[NovaSonic] product_card received:', msg.name, msg.image_url);
+        renderProductCard(msg);
+      } else if (msg.type === 'signed_in') {
+        var label = msg.reconnected ? '🔄 Still signed in as ' : '✅ Signed in as ';
+        addTranscript('tool', label + msg.name);
+        subtitleEl.textContent = 'Signed in as ' + msg.name;
+        sendToStreamlit({ event: 'signed_in', customer_id: msg.customer_id, name: msg.name });
+      } else if (msg.type === 'sign_in_progress') {
+        addTranscript('tool', '📱 Got ' + msg.digits_so_far + '/10 digits, need ' + msg.remaining + ' more...');
+      } else if (msg.type === 'signed_out') {
+        addTranscript('tool', '👋 Signed out');
+        subtitleEl.textContent = 'Not signed in';
+        sendToStreamlit({ event: 'signed_out' });
+      } else if (msg.type === 'virtual_tryon') {
+        addTranscript('tool', '👗 Opening Virtual Try-On for ' + msg.product_name);
+        renderTryOnPanel(msg);
+        sendToStreamlit({ event: 'virtual_tryon', product_id: msg.product_id, product_name: msg.product_name });
+      } else if (msg.type === 'error') {
+        statusEl.textContent = '⚠️ Error: ' + msg.message;
+        stopConversation();
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      statusEl.textContent = '⚠️ Connection error';
+      stopConversation();
+    };
+
+    ws.onclose = () => {
+      if (isActive) {
+        statusEl.textContent = 'Connection closed';
+        stopConversation();
+      }
+    };
+
+  } catch (err) {
+    console.error('Start error:', err);
+    statusEl.textContent = '⚠️ ' + err.message;
+    btn.className = '';
+  }
+}
+
+function stopConversation() {
+  isActive = false;
+  btn.className = '';
+  statusEl.textContent = 'Click to start voice conversation';
+  subtitleEl.textContent = 'Uses Amazon Nova Sonic speech-to-speech';
+
+  if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+  if (audioContext) { audioContext.close(); audioContext = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'stop' }));
+    ws.close();
+  }
+  ws = null;
+  playbackQueue = [];
+  isPlaying = false;
+}
+
+btn.addEventListener('click', () => {
+  if (isActive) {
+    stopConversation();
+  } else {
+    startConversation();
+  }
+});
+</script>
+</body>
+</html>

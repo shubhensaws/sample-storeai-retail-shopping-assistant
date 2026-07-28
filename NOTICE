@@ -1,0 +1,27 @@
+StoreAI
+Copyright 2026 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+This software includes third-party open-source components, each used under its own
+license and remaining the property of its respective owners. Notable components:
+
+- LangGraph and LangChain (MIT) — agent orchestration
+- LiteLLM (MIT) — unified model gateway
+- FastAPI (MIT), Starlette (BSD-3-Clause), Uvicorn (BSD-3-Clause) — service HTTP layer
+- Pydantic (MIT)
+- boto3 and botocore (Apache-2.0) — AWS SDK for Python
+- PyJWT (MIT) — JSON Web Token verification
+- Pillow (HPND) — image processing
+- OpenAI Python SDK (Apache-2.0) — gateway client transport
+- Next.js (MIT), React (MIT), Tailwind CSS (MIT) — frontend
+- faster-whisper (MIT) and CTranslate2 (MIT) — Whisper speech-to-text
+- vLLM and transformers-neuronx (Apache-2.0) — self-hosted LLM serving on AWS Trainium
+- AWS Neuron SDK — under the AWS Neuron SDK license
+
+Model weights and services used by this project are governed by their own terms:
+
+- Qwen3 and Qwen-Image-Edit models — Alibaba Cloud, under their respective model licenses
+- FASHN virtual try-on (fashn-ai/fashn-vton-1.5) — under its repository/model license
+- Anthropic Claude and Amazon Nova — accessed as managed services through Amazon Bedrock
+
+This list is provided for convenience and may not be exhaustive. Before redistributing
+or deploying, review each dependency's license and terms for your intended use.
